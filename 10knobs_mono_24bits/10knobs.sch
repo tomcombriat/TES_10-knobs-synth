@@ -484,7 +484,6 @@ Wire Wire Line
 	8750 2000 8900 2000
 Wire Wire Line
 	8500 2000 8750 2000
-NoConn ~ 8350 3150
 Wire Wire Line
 	7350 2000 7600 2000
 $Comp
@@ -1005,4 +1004,43 @@ Wire Wire Line
 Connection ~ 6750 3100
 Wire Wire Line
 	6750 3100 6850 3100
+$Comp
+L Device:R R10
+U 1 1 5F41B0F0
+P 9500 3050
+F 0 "R10" H 9570 3096 50  0000 L CNN
+F 1 "22k" H 9570 3005 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 9430 3050 50  0001 C CNN
+F 3 "~" H 9500 3050 50  0001 C CNN
+	1    9500 3050
+	1    0    0    -1  
+$EndComp
+Connection ~ 9500 2900
+$Comp
+L Device:R R11
+U 1 1 5F41B1C3
+P 9650 3200
+F 0 "R11" V 9443 3200 50  0000 C CNN
+F 1 "22k" V 9534 3200 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 9580 3200 50  0001 C CNN
+F 3 "~" H 9650 3200 50  0001 C CNN
+	1    9650 3200
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	9900 3100 9800 3100
+Wire Wire Line
+	9800 3100 9800 3200
+Wire Wire Line
+	9900 3150 9900 3100
+Connection ~ 9900 3150
+Wire Wire Line
+	9500 3200 8950 3200
+Wire Wire Line
+	8950 3200 8950 3000
+Wire Wire Line
+	8950 3000 8350 3000
+Wire Wire Line
+	8350 3000 8350 3150
+Connection ~ 9500 3200
 $EndSCHEMATC
