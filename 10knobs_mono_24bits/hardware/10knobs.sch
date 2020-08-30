@@ -27,8 +27,6 @@ F 3 "www.rogerclark.net" H 8050 2500 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	8650 4900 8650 5000
-Wire Wire Line
-	8750 5050 8750 4900
 $Comp
 L Device:R_POT RV8
 U 1 1 5D05046E
@@ -984,7 +982,7 @@ Connection ~ 4450 6350
 Wire Wire Line
 	4450 6350 4450 6400
 Wire Wire Line
-	5200 2800 6750 2800
+	5200 2800 5700 2800
 Wire Wire Line
 	6200 3100 6750 3100
 $Comp
@@ -1043,4 +1041,20 @@ Wire Wire Line
 Wire Wire Line
 	8350 3000 8350 3150
 Connection ~ 9500 3200
+$Comp
+L power:+3.3V #PWR0111
+U 1 1 5F4C8B76
+P 5700 2800
+F 0 "#PWR0111" H 5700 2650 50  0001 C CNN
+F 1 "+3.3V" H 5715 2973 50  0000 C CNN
+F 2 "" H 5700 2800 50  0001 C CNN
+F 3 "" H 5700 2800 50  0001 C CNN
+	1    5700 2800
+	1    0    0    -1  
+$EndComp
+Connection ~ 5700 2800
+Wire Wire Line
+	5700 2800 6750 2800
+Wire Wire Line
+	8750 4900 8750 5050
 $EndSCHEMATC

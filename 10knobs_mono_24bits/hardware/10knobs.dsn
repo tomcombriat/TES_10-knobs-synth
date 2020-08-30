@@ -1,4 +1,4 @@
-(pcb "/home/tom/TES/TES_10-knobs-synth/10knobs_mono/10knobs.dsn"
+(pcb "/home/tom/TES/TES_10-knobs-synth/10knobs_mono_24bits/hardware/10knobs.dsn"
   (parser
     (string_quote ")
     (space_in_quoted_tokens on)
@@ -13,7 +13,7 @@
       (property
         (index 0)
       )
-    )x
+    )
     (boundary
       (path pcb 0  150745 -101895  34158.4 -101895  34158.4 -15745  150745 -15745
             150745 -101895)
@@ -38,16 +38,18 @@
     )
     (component Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal
       (place R1 59500 -78500 front 0 (PN 10))
-      (place R2 116500 -61000 front 270 (PN 220))
+      (place R2 117500 -59500 front 270 (PN 220))
       (place R4 77000 -83500 front 180 (PN 220))
       (place R5 79000 -95500 front 180 (PN 220))
       (place R7 51500 -91500 front 0 (PN 33))
       (place R9 137000 -75500 front 90 (PN 100R))
+      (place R11 116500 -76500 front 180 (PN 22k))
     )
     (component Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal::1
       (place R3 70000 -77500 front 0 (PN 220))
       (place R6 119000 -85000 front 90 (PN 470k))
       (place R8 133000 -75500 front 180 (PN 1k))
+      (place R10 124000 -70500 front 180 (PN 22k))
     )
     (component Potentiometer_THT:Potentiometer_Alps_RK09K_Single_Vertical
       (place RV1 78000 -57000 front 90 (PN 10K))
@@ -86,10 +88,10 @@
       (place J1 99000 -95500 front 270 (PN Conn_01x06_Female))
     )
     (component Potentiometer_THT:Potentiometer_Bourns_3266Y_Vertical
-      (place RV9 108500 -64500 front 0 (PN 1k_Trim))
+      (place RV9 105500 -64500 front 0 (PN 1k_Trim))
     )
     (component "Package_DIP:DIP-8_W7.62mm"
-      (place U1 96500 -84500 front 90 (PN MCP4822))
+      (place U1 96500 -85000 front 90 (PN MCP4822))
       (place U4 132500 -89000 front 180 (PN LM358))
     )
     (component "Package_DIP:DIP-8_W7.62mm::1"
@@ -805,11 +807,13 @@
       (pins U2-16 R1-2 R4-2 U3-6)
     )
     (net +3V3
-      (pins RV1-1 RV2-1 RV3-1 RV4-1 RV5-1 RV6-1 RV8-1 R7-1 RV10-1 RV11-1)
+      (pins U2-18 R4-1 RV1-1 RV2-1 RV3-1 RV4-1 RV5-1 RV6-1 RV8-1 R7-1 RV10-1 RV11-1
+        U3-8 C3-1)
     )
     (net GND
       (pins U2-19 U2-20 R5-2 RV1-3 RV2-3 RV3-3 RV4-3 RV5-3 RV6-3 RV7-3 RV8-3 TP2-1
-        TP6-1 TP10-1 TP11-1 R8-2 C2-2 RV10-3 RV11-3 U1-5 U1-7 U3-5 C1-2 C3-2 U4-4)
+        TP6-1 TP10-1 TP11-1 R8-2 C2-2 RV10-3 RV11-3 U1-5 U1-7 U3-5 C1-2 C3-2 U4-4
+        R11-1)
     )
     (net "Net-(D2-Pad2)"
       (pins U2-25 D2-2)
@@ -844,9 +848,6 @@
     (net "Net-(RV8-Pad2)"
       (pins U2-6 RV8-2)
     )
-    (net "Net-(C3-Pad1)"
-      (pins U2-18 R4-1 U3-8 C3-1)
-    )
     (net "Net-(J1-Pad5)"
       (pins U2-26 J1-5)
     )
@@ -875,7 +876,7 @@
       (pins U2-24 U1-4)
     )
     (net "Net-(C1-Pad1)"
-      (pins U2-38 TP9-1 C2-1 U1-1 C1-1 U4-8)
+      (pins U2-38 TP9-1 C2-1 U1-1 C1-1 U4-8 R10-1)
     )
     (net "Net-(C4-Pad1)"
       (pins C4-1 U4-6 U4-7)
@@ -889,11 +890,14 @@
     (net "Net-(R9-Pad2)"
       (pins TP7-1 R9-2)
     )
-    (class kicad_default "" +3V3 DAC_out GND "Net-(C1-Pad1)" "Net-(C1-Pad2)"
-      "Net-(C3-Pad1)" "Net-(C4-Pad1)" "Net-(C4-Pad2)" "Net-(C5-Pad1)" "Net-(D1-Pad1)"
-      "Net-(D1-Pad2)" "Net-(D2-Pad1)" "Net-(D2-Pad2)" "Net-(J1-Pad1)" "Net-(J1-Pad2)"
-      "Net-(J1-Pad3)" "Net-(J1-Pad4)" "Net-(J1-Pad5)" "Net-(J1-Pad6)" "Net-(R1-Pad1)"
-      "Net-(R1-Pad2)" "Net-(R2-Pad1)" "Net-(R2-Pad2)" "Net-(R3-Pad1)" "Net-(R6-Pad1)"
+    (net "Net-(R10-Pad2)"
+      (pins U2-5 R10-2 R11-2)
+    )
+    (class kicad_default "" +3V3 DAC_out GND "Net-(C1-Pad1)" "Net-(C3-Pad1)"
+      "Net-(C4-Pad1)" "Net-(C4-Pad2)" "Net-(C5-Pad1)" "Net-(D1-Pad1)" "Net-(D1-Pad2)"
+      "Net-(D2-Pad1)" "Net-(D2-Pad2)" "Net-(J1-Pad1)" "Net-(J1-Pad2)" "Net-(J1-Pad3)"
+      "Net-(J1-Pad4)" "Net-(J1-Pad5)" "Net-(J1-Pad6)" "Net-(R1-Pad1)" "Net-(R1-Pad2)"
+      "Net-(R10-Pad2)" "Net-(R2-Pad1)" "Net-(R2-Pad2)" "Net-(R3-Pad1)" "Net-(R6-Pad1)"
       "Net-(R7-Pad2)" "Net-(R8-Pad1)" "Net-(R9-Pad2)" "Net-(RV1-Pad2)" "Net-(RV10-Pad2)"
       "Net-(RV11-Pad2)" "Net-(RV2-Pad2)" "Net-(RV3-Pad2)" "Net-(RV4-Pad2)"
       "Net-(RV5-Pad2)" "Net-(RV6-Pad2)" "Net-(RV8-Pad2)" "Net-(U1-Pad2)" "Net-(U1-Pad3)"
@@ -901,7 +905,7 @@
       "Net-(U2-Pad23)" "Net-(U2-Pad28)" "Net-(U2-Pad29)" "Net-(U2-Pad3)" "Net-(U2-Pad30)"
       "Net-(U2-Pad31)" "Net-(U2-Pad32)" "Net-(U2-Pad33)" "Net-(U2-Pad34)"
       "Net-(U2-Pad35)" "Net-(U2-Pad36)" "Net-(U2-Pad37)" "Net-(U2-Pad4)" "Net-(U2-Pad41)"
-      "Net-(U2-Pad42)" "Net-(U2-Pad5)" "Net-(U3-Pad1)" "Net-(U3-Pad4)" "Net-(U3-Pad7)"
+      "Net-(U2-Pad42)" "Net-(U3-Pad1)" "Net-(U3-Pad4)" "Net-(U3-Pad7)"
       (circuit
         (use_via Via[0-1]_2300:1200_um)
       )
