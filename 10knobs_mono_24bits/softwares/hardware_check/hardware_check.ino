@@ -6,6 +6,8 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
 
 
 void setup() {
+  pinMode(PB1, INPUT);
+  pinMode(PB0, INPUT);
   pinMode(PA1, INPUT);
   pinMode(PA2, INPUT);
   pinMode(PA3, INPUT);
@@ -14,7 +16,7 @@ void setup() {
   pinMode(PA6, INPUT);
   pinMode(PA7, INPUT);
   pinMode(PA8, OUTPUT);
-    pinMode(PB8, OUTPUT);
+  pinMode(PB8, OUTPUT);
 
   MIDI.begin(MIDI_CHANNEL_OMNI);
   Serial.begin(115200);
@@ -32,6 +34,12 @@ void loop() {
     delay(1);
     digitalWrite(PA8, HIGH);
   }
+
+  Serial.print(analogRead(PB1));
+  Serial.print(" ");
+
+  Serial.print(analogRead(PB0));
+  Serial.print(" ");
 
   Serial.print(analogRead(PA1));
   Serial.print(" ");
@@ -60,8 +68,8 @@ void loop() {
   Serial.print(analogRead(PA7));
   Serial.println(" ");
 
-for (unsigned int i = 0 ; i< 2048 ; i++) {
-analogWrite(PB8,i);
-analogWrite(PA8,i);
-}
+  for (unsigned int i = 0 ; i < 2048 ; i++) {
+    analogWrite(PB8, i);
+    analogWrite(PA8, i);
+  }
 }
