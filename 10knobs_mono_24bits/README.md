@@ -1,3 +1,3 @@
-## 8 knobs mono
+## 10 knobs mono
 
-Actual working version of 8 knobs synth. Features an STM32 BluePill, with standard audio output (STANDARD_PLUS 10bits of Mozzi @ 32k)
+Actual working version of 10 knobs synth. Features an STM32 BluePill, with DAC used defined output (STANDARD_PLUS 24bits of Mozzi @ 32k)
