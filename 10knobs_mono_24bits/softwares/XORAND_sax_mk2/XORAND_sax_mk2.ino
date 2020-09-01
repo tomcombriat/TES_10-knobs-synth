@@ -38,9 +38,9 @@
 #define CONTROL_RATE 1024 // Hz, powers of 2 are most reliable
 
 #define LED PA8
-//#define BREATH_LIN
+#define BREATH_LIN
 //#define BREATH_LOG
-#define BREATH_EXP
+//#define BREATH_EXP
 
 
 
@@ -57,7 +57,7 @@ ADSR <AUDIO_RATE, AUDIO_RATE> envelope[POLYPHONY];
 
 LowPassFilter lpf;
 Smooth <int> kSmoothInput(0.2f);
-Smooth <byte> breath_smooth(0.6f);  // increase ????
+Smooth <int> breath_smooth(0.6f);  // increase ????
 //Portamento<CONTROL_RATE> porta;
 
 byte notes[POLYPHONY] = {0};
@@ -184,7 +184,7 @@ void setup() {
   MIDI.setHandlePitchBend(HandlePitchBend);
   MIDI.setHandleAfterTouchChannel(HandleAfterTouchChannel);
 
-  //Serial.begin(115200);
+ // Serial.begin(115200);
 
 
   MIDI.begin(MIDI_CHANNEL_OMNI);
@@ -266,23 +266,23 @@ void updateControl() {
       }
       break;
     case 8:
-      resonance  = mozziAnalogRead(PA2) >> 4; toggle = 0;
+      resonance  = mozziAnalogRead(PA2) >> 4;
       break;
     case 9:
-      breath_sens = mozziAnalogRead(PA1) >> 5;
+      breath_sens = mozziAnalogRead(PA1) >> 4;
       toggle = 0;
       break;
-
-
   }
+  //Serial.println(breath_sens);
 
   /*
     for (byte i = 0; i < POLYPHONY; i++)
     {
       modulation[i] = (LFO[i].next());
     }
-  */
-  // MIDI.read();
+*/
+//unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume]))*breath_sens)>>7)-(breath_sens  - 127); 
+//Serial.println(breath_next);
 }
 
 int updateAudio() {
@@ -292,7 +292,7 @@ int updateAudio() {
 
 
 
-  int breath_next = (((breath_smooth.next(breath_to_volume[volume]))*breath_sens)>>7)-(breath_sens  - 127); // this could be done in updatecontrol() maybe? for speed? And the following also
+unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume]))*breath_sens)>>8)-(breath_sens  - 255); // this could be done in updatecontrol() maybe? for speed? And the following also
   if (breath_next == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)
