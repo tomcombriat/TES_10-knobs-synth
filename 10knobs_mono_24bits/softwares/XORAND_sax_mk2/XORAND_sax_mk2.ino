@@ -7,8 +7,8 @@
        -   unsigned long convertMsecToControlUpdateSteps(unsigned int msec){
    return (uint32_t) (((uint32_t)msec*CONTROL_UPDATE_RATE)>>10); // approximate /1000 with shift
 
-Or use the TES-branch of tomcombriat/Mozzi
-Mozzi config should be set to use an external audio
+  Or use the TES-branch of tomcombriat/Mozzi
+  Mozzi config should be set to use an external audio
 */
 
 
@@ -31,7 +31,7 @@ Mozzi config should be set to use an external audio
 #include <Portamento.h>
 #include "midi_handles.h"
 #include <DAC_MCP49xx.h>  // https://github.com/tomcombriat/DAC_MCP49XX 
-                          // which is an adapted fork from https://github.com/exscape/electronics/tree/master/Arduino/Libraries/DAC_MCP49xx  (Thomas Backman)
+// which is an adapted fork from https://github.com/exscape/electronics/tree/master/Arduino/Libraries/DAC_MCP49xx  (Thomas Backman)
 
 
 #define POLYPHONY 8
@@ -64,7 +64,7 @@ byte notes[POLYPHONY] = {0};
 int wet_dry_mix, modulation[POLYPHONY];
 int mix1;
 int mix2;
-int mix_oscil, cutoff = 0, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, prev_cutoff = 0, breath_on_cutoff = 0, midi_cutoff = 255;
+int mix_oscil, cutoff = 0, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, prev_cutoff = 0, breath_on_cutoff = 0, midi_cutoff = 255, resonance = 0, prev_resonance = 0, breath_sens = 0;
 byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, volume = 0, delay_volume = 0;
 bool sustain = false;
 bool mod = true;
@@ -139,11 +139,11 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-   dac.init(&mySPI);
+  dac.init(&mySPI);
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH);
   pinMode(PB1, INPUT);
-    pinMode(PB0, INPUT);  
+  pinMode(PB0, INPUT);
   pinMode(PA1, INPUT);
   pinMode(PA2, INPUT);
   pinMode(PA3, INPUT);
@@ -236,34 +236,44 @@ void updateControl() {
   switch (toggle)
   {
     case 1:
-      mix1 =  mozziAnalogRead(PA6) >> 4;
+      mix1 =  mozziAnalogRead(PB0) >> 4;
       break;
     case 2:
-      mix2 =  mozziAnalogRead(PA5) >> 4;
+      mix2 =  mozziAnalogRead(PA6) >> 4;
       break;
     case 3:
-      wet_dry_mix = mozziAnalogRead(PA7) >> 2;  // goos to 1024
+      wet_dry_mix = mozziAnalogRead(PA3) >> 2;  // goos to 1024
       break;
     case 4:
-      mix_oscil = mozziAnalogRead(PA3) >> 4 ;
+      mix_oscil = mozziAnalogRead(PA5) >> 4 ;
       break;
     case 5:
-      chord_release = mozziAnalogRead(PA1) >> 1 ;
+      chord_release = mozziAnalogRead(PA7) >> 1 ;
       break;
     case 6:
-      chord_attack = mozziAnalogRead(PA2) >> 1 ;
+      chord_attack = mozziAnalogRead(PB1) >> 1 ;
       break;
     case 7:
       breath_on_cutoff = kSmoothInput(mozziAnalogRead(PA4) >> 4);
       cutoff = ((breath_on_cutoff * volume) >> 7 ) + midi_cutoff;
       if (cutoff > 255) cutoff = 255;
-      if (cutoff != prev_cutoff)
+      if (cutoff != prev_cutoff || resonance != prev_resonance)
       {
+        lpf.setResonance(resonance);
         lpf.setCutoffFreq(cutoff);
         prev_cutoff = cutoff;
+        prev_resonance = resonance;
       }
+      break;
+    case 8:
+      resonance  = mozziAnalogRead(PA2) >> 4; toggle = 0;
+      break;
+    case 9:
+      breath_sens = mozziAnalogRead(PA1) >> 5;
       toggle = 0;
       break;
+
+
   }
 
   /*
@@ -282,7 +292,7 @@ int updateAudio() {
 
 
 
-  int breath_next = breath_smooth.next(breath_to_volume[volume]); // this could be done in updatecontrol() maybe? for speed? And the following also
+  int breath_next = (((breath_smooth.next(breath_to_volume[volume]))*breath_sens)>>7)-(breath_sens  - 127); // this could be done in updatecontrol() maybe? for speed? And the following also
   if (breath_next == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)
@@ -365,15 +375,15 @@ int updateAudio() {
   */
 
   sample = lpf.next(sample);
-  if (sample > AUDIO_BIAS-5)
+  if (sample > AUDIO_BIAS - 5)
   {
     digitalWrite(LED, HIGH);
 
-    sample = AUDIO_BIAS-5;
+    sample = AUDIO_BIAS - 5;
   }
-  else if (sample < -AUDIO_BIAS+5)
+  else if (sample < -AUDIO_BIAS + 5)
   {
-    sample = -AUDIO_BIAS+5;
+    sample = -AUDIO_BIAS + 5;
   }
   else if (digitalRead(LED)) digitalWrite(LED, LOW);
 
