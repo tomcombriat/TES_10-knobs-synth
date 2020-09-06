@@ -1,14 +1,23 @@
 /*
    Combriat 2020
+
+  XORAND Sax mk2
+  A 10k synth flavor to be used with an EWI. Supports polyphony (for chords) and breath control over volume or/and filter.
+
+   
    To change from mozzi original:
        -   unsigned long update_step_counter;
        -   unsigned long update_steps;
        -   unsigned long num_update_steps;   in ADSR.h (L51)
        -   unsigned long convertMsecToControlUpdateSteps(unsigned int msec){
-   return (uint32_t) (((uint32_t)msec*CONTROL_UPDATE_RATE)>>10); // approximate /1000 with shift
+           return (uint32_t) (((uint32_t)msec*CONTROL_UPDATE_RATE)>>10); // approximate /1000 with shift
+  Or use the TES-branch of tomcombriat/Mozzi.
 
-  Or use the TES-branch of tomcombriat/Mozzi
+  
   Mozzi config should be set to use an external audio
+  Compilation should be -O3, OC @ 128MHz.
+
+  TODO: battery check.
 */
 
 
@@ -248,14 +257,14 @@ void updateControl() {
       mix_oscil = mozziAnalogRead(PA5) >> 4 ;
       break;
     case 5:
-      chord_release = mozziAnalogRead(PA7) >> 1 ;
+      chord_release = mozziAnalogRead(PA7) >> 0 ;
       break;
     case 6:
-      chord_attack = mozziAnalogRead(PB1) >> 1 ;
+      chord_attack = mozziAnalogRead(PB1) >> 0 ;
       break;
     case 7:
       breath_on_cutoff = kSmoothInput(mozziAnalogRead(PA4) >> 4);
-      cutoff = ((breath_on_cutoff * volume) >> 7 ) + midi_cutoff;
+      cutoff = ((breath_on_cutoff * volume) >> 8 ) + midi_cutoff;  // >>7
       if (cutoff > 255) cutoff = 255;
       if (cutoff != prev_cutoff || resonance != prev_resonance)
       {
