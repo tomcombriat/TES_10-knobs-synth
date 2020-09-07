@@ -363,7 +363,7 @@ unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume]))*brea
       //sample += envelope_audio.next() * (((((partial_sample * (breath_smooth.next(breath_to_volume[volume]))) ) * modulation[i]) >> 16)); //is played actively now
 
       //sample +=  (partial_sample * (breath_next * envelope[i].next()) >> 2)  >> 10;
-      sample += (partial_sample * env_next);
+      sample += (partial_sample * env_next) >>1;
 
       //else sample += (((partial_sample * (envelope[i].next())) >> 8) * modulation[i]) >> 9 ;  //is played actively now
     }
