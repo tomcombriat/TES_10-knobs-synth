@@ -44,7 +44,7 @@
 
 
 #define POLYPHONY 8
-#define CONTROL_RATE 1024 // Hz, powers of 2 are most reliable
+#define CONTROL_RATE 2048 // Hz, powers of 2 are most reliable
 
 #define LED PA8
 #define BREATH_LIN
@@ -66,7 +66,7 @@ ADSR <AUDIO_RATE, AUDIO_RATE> envelope[POLYPHONY];
 
 LowPassFilter lpf;
 Smooth <int> kSmoothInput(0.2f);
-Smooth <int> breath_smooth(0.6f);  // increase ????
+Smooth <int> breath_smooth(0.2f);  // increase ????
 //Portamento<CONTROL_RATE> porta;
 
 byte notes[POLYPHONY] = {0};
