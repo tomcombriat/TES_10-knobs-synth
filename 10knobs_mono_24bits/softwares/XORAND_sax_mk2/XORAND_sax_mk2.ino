@@ -302,7 +302,8 @@ int updateAudio() {
 
 
 unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume]))*breath_sens)>>8)-(breath_sens  - 255); // this could be done in updatecontrol() maybe? for speed? And the following also
-  if (breath_next == 0)
+  //if (breath_next == 0)
+  if (volume == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)
     {
