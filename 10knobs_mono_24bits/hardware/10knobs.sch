@@ -181,17 +181,6 @@ Wire Wire Line
 Wire Wire Line
 	7250 2700 6050 2700
 $Comp
-L Connector:TestPoint TP6
-U 1 1 5D074B90
-P 6200 3100
-F 0 "TP6" H 6142 3127 50  0000 R CNN
-F 1 "IN2" H 6142 3218 50  0000 R CNN
-F 2 "TestPoint:TestPoint_THTPad_2.5x2.5mm_Drill1.2mm" H 6400 3100 50  0001 C CNN
-F 3 "~" H 6400 3100 50  0001 C CNN
-	1    6200 3100
-	-1   0    0    1   
-$EndComp
-$Comp
 L Connector:TestPoint TP5
 U 1 1 5D074C58
 P 4100 2550
@@ -226,7 +215,6 @@ F 3 "~" H 4100 2700 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Connection ~ 4100 2850
-Connection ~ 6200 3100
 $Comp
 L Connector:TestPoint TP1
 U 1 1 5D082A8E
@@ -271,8 +259,6 @@ F 3 "" H 5900 3100 50  0001 C CNN
 	1    5900 3100
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	5900 3100 6200 3100
 $Comp
 L power:+3.3V #PWR0102
 U 1 1 5D086156
@@ -466,8 +452,6 @@ Wire Wire Line
 Wire Wire Line
 	9500 2900 9750 2900
 Wire Wire Line
-	10800 4900 9050 4900
-Wire Wire Line
 	9050 4900 9050 5200
 Wire Wire Line
 	9050 5200 8700 5200
@@ -600,8 +584,6 @@ F 3 "http://ww1.microchip.com/downloads/en/DeviceDoc/20002249B.pdf" H 5250 6500 
 $EndComp
 Wire Wire Line
 	8700 5200 8700 5950
-Wire Wire Line
-	8700 5950 4850 5950
 Connection ~ 8700 5200
 Wire Wire Line
 	8700 5200 8550 5200
@@ -710,20 +692,6 @@ F 3 "" H 4900 6350 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	4750 6350 4850 6350
-$Comp
-L Device:CP C2
-U 1 1 5F481DCA
-P 4850 6100
-F 0 "C2" H 4968 6146 50  0000 L CNN
-F 1 "0.1micro_tantale" H 4968 6055 50  0000 L CNN
-F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 4888 5950 50  0001 C CNN
-F 3 "~" H 4850 6100 50  0001 C CNN
-	1    4850 6100
-	1    0    0    -1  
-$EndComp
-Connection ~ 4850 5950
-Wire Wire Line
-	4850 5950 4450 5950
 Wire Wire Line
 	4850 6250 4850 6350
 Connection ~ 4850 6350
@@ -972,7 +940,7 @@ L Device:CP C1
 U 1 1 5F521F06
 P 4600 6350
 F 0 "C1" V 4855 6350 50  0000 C CNN
-F 1 "10m_chem" V 4764 6350 50  0000 C CNN
+F 1 "100m_chem" V 4764 6350 50  0000 C CNN
 F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 4638 6200 50  0001 C CNN
 F 3 "~" H 4600 6350 50  0001 C CNN
 	1    4600 6350
@@ -983,25 +951,6 @@ Wire Wire Line
 	4450 6350 4450 6400
 Wire Wire Line
 	5200 2800 5700 2800
-Wire Wire Line
-	6200 3100 6750 3100
-$Comp
-L Device:CP C3
-U 1 1 5F52256D
-P 6750 2950
-F 0 "C3" H 6868 2996 50  0000 L CNN
-F 1 "100n_tant" H 6868 2905 50  0000 L CNN
-F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 6788 2800 50  0001 C CNN
-F 3 "~" H 6750 2950 50  0001 C CNN
-	1    6750 2950
-	1    0    0    -1  
-$EndComp
-Connection ~ 6750 2800
-Wire Wire Line
-	6750 2800 7050 2800
-Connection ~ 6750 3100
-Wire Wire Line
-	6750 3100 6850 3100
 $Comp
 L Device:R R10
 U 1 1 5F41B0F0
@@ -1054,7 +1003,61 @@ F 3 "" H 5700 2800 50  0001 C CNN
 $EndComp
 Connection ~ 5700 2800
 Wire Wire Line
-	5700 2800 6750 2800
-Wire Wire Line
 	8750 4900 8750 5050
+Wire Wire Line
+	9050 4900 10800 4900
+Wire Wire Line
+	4450 5950 4850 5950
+$Comp
+L Device:C C2
+U 1 1 5FD3D8F7
+P 4850 6100
+F 0 "C2" H 4965 6146 50  0000 L CNN
+F 1 "0.1m ceram" H 4965 6055 50  0000 L CNN
+F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 4888 5950 50  0001 C CNN
+F 3 "~" H 4850 6100 50  0001 C CNN
+	1    4850 6100
+	1    0    0    -1  
+$EndComp
+Connection ~ 4850 5950
+Wire Wire Line
+	4850 5950 8700 5950
+Wire Wire Line
+	5700 2800 6450 2800
+$Comp
+L Device:C C7
+U 1 1 5FD3DF08
+P 6750 2950
+F 0 "C7" H 6865 2996 50  0000 L CNN
+F 1 "0.1m ceram" H 6865 2905 50  0000 L CNN
+F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 6788 2800 50  0001 C CNN
+F 3 "~" H 6750 2950 50  0001 C CNN
+	1    6750 2950
+	1    0    0    -1  
+$EndComp
+Connection ~ 6750 2800
+Wire Wire Line
+	6750 2800 7050 2800
+Connection ~ 6750 3100
+Wire Wire Line
+	6750 3100 6850 3100
+$Comp
+L Device:CP C6
+U 1 1 5FD3E3AD
+P 6450 2950
+F 0 "C6" H 6568 2996 50  0000 L CNN
+F 1 "100m chem" H 6568 2905 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 6488 2800 50  0001 C CNN
+F 3 "~" H 6450 2950 50  0001 C CNN
+	1    6450 2950
+	1    0    0    -1  
+$EndComp
+Connection ~ 6450 2800
+Wire Wire Line
+	6450 2800 6750 2800
+Connection ~ 6450 3100
+Wire Wire Line
+	6450 3100 6750 3100
+Wire Wire Line
+	5900 3100 6450 3100
 $EndSCHEMATC
