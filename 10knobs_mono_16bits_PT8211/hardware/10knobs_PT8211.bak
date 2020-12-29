@@ -1,4 +1,5 @@
 EESchema Schematic File Version 4
+LIBS:10knobs_PT8211-cache
 EELAYER 26 0
 EELAYER END
 $Descr A4 11693 8268
@@ -452,7 +453,6 @@ Wire Wire Line
 	8550 5200 8550 4900
 Text GLabel 10400 5650 2    50   Input ~ 0
 DAC_out
-NoConn ~ 8350 4900
 Connection ~ 8500 2550
 Connection ~ 8750 2000
 Wire Wire Line
@@ -656,7 +656,7 @@ F 3 "~" H 7650 5450 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	8650 5000 7850 5000
+	8650 5000 8400 5000
 Wire Wire Line
 	7850 5000 7850 5250
 NoConn ~ 7750 5250
@@ -819,9 +819,6 @@ F 3 "~" H 1700 4500 50  0001 C CNN
 	1    1700 4500
 	0    -1   -1   0   
 $EndComp
-Connection ~ 1550 4500
-Wire Wire Line
-	1550 4500 1550 4550
 Wire Wire Line
 	5200 2800 5700 2800
 $Comp
@@ -936,7 +933,7 @@ U 1 1 5FEA847C
 P 4600 6900
 F 0 "U1" H 4600 7417 50  0000 C CNN
 F 1 "PT8211" H 4600 7326 50  0000 C CNN
-F 2 "Housings_SOIC:SOIC-8_3.9x4.9mm_Pitch1.27mm" H 4600 6900 50  0001 C CIN
+F 2 "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm" H 4600 6900 50  0001 C CIN
 F 3 "" H 4600 6900 50  0001 C CNN
 	1    4600 6900
 	1    0    0    -1  
@@ -955,13 +952,9 @@ $EndComp
 Wire Wire Line
 	4150 7150 4150 7200
 Wire Wire Line
-	6850 4900 6850 5550
-Wire Wire Line
 	3950 5550 3950 6800
 Wire Wire Line
 	3950 6800 4150 6800
-Wire Wire Line
-	3950 5550 6850 5550
 Wire Wire Line
 	6950 4900 6950 5450
 Wire Wire Line
@@ -984,8 +977,6 @@ Wire Wire Line
 	3800 7000 4150 7000
 NoConn ~ 5050 6800
 Wire Wire Line
-	5050 7150 5050 7350
-Wire Wire Line
 	5050 7550 4850 7550
 Wire Wire Line
 	8550 5200 9050 5200
@@ -1002,39 +993,23 @@ U 1 1 5FEF2CE0
 P 4700 7550
 F 0 "R2" V 4493 7550 50  0000 C CNN
 F 1 "10" V 4584 7550 50  0000 C CNN
-F 2 "" V 4630 7550 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 4630 7550 50  0001 C CNN
 F 3 "~" H 4700 7550 50  0001 C CNN
 	1    4700 7550
 	0    1    1    0   
 $EndComp
-$Comp
-L Device:CP C3
-U 1 1 5FEF2E77
-P 5200 7350
-F 0 "C3" V 5455 7350 50  0000 C CNN
-F 1 "47u" V 5364 7350 50  0000 C CNN
-F 2 "" H 5238 7200 50  0001 C CNN
-F 3 "~" H 5200 7350 50  0001 C CNN
-	1    5200 7350
-	0    -1   -1   0   
-$EndComp
-Connection ~ 5050 7350
-Wire Wire Line
-	5050 7350 5050 7550
 $Comp
 L Device:C C8
 U 1 1 5FEF3075
 P 5200 7550
 F 0 "C8" V 4948 7550 50  0000 C CNN
 F 1 "100n" V 5039 7550 50  0000 C CNN
-F 2 "" H 5238 7400 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 5238 7400 50  0001 C CNN
 F 3 "~" H 5200 7550 50  0001 C CNN
 	1    5200 7550
 	0    1    1    0   
 $EndComp
 Connection ~ 5050 7550
-Wire Wire Line
-	5350 7350 5350 7450
 $Comp
 L power:GND #PWR0112
 U 1 1 5FEFACA7
@@ -1046,7 +1021,6 @@ F 3 "" H 5350 7450 50  0001 C CNN
 	1    5350 7450
 	0    -1   -1   0   
 $EndComp
-Connection ~ 5350 7450
 Wire Wire Line
 	5350 7450 5350 7550
 Wire Wire Line
@@ -1062,7 +1036,7 @@ U 1 1 5FF12ABF
 P 5450 6650
 F 0 "R6" V 5243 6650 50  0000 C CNN
 F 1 "7.5k" V 5334 6650 50  0000 C CNN
-F 2 "" V 5380 6650 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 5380 6650 50  0001 C CNN
 F 3 "~" H 5450 6650 50  0001 C CNN
 	1    5450 6650
 	0    1    1    0   
@@ -1073,7 +1047,7 @@ U 1 1 5FF12C18
 P 5800 6650
 F 0 "R12" V 5593 6650 50  0000 C CNN
 F 1 "7.5k" V 5684 6650 50  0000 C CNN
-F 2 "" V 5730 6650 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 5730 6650 50  0001 C CNN
 F 3 "~" H 5800 6650 50  0001 C CNN
 	1    5800 6650
 	0    1    1    0   
@@ -1086,7 +1060,7 @@ U 1 1 5FF2309A
 P 5950 6800
 F 0 "C10" H 6065 6846 50  0000 L CNN
 F 1 "470p" H 6065 6755 50  0000 L CNN
-F 2 "" H 5988 6650 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 5988 6650 50  0001 C CNN
 F 3 "~" H 5950 6800 50  0001 C CNN
 	1    5950 6800
 	1    0    0    -1  
@@ -1113,7 +1087,7 @@ U 1 1 5FF2B7D6
 P 5650 6350
 F 0 "C9" V 5398 6350 50  0000 C CNN
 F 1 "1000p" V 5489 6350 50  0000 C CNN
-F 2 "" H 5688 6200 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 5688 6200 50  0001 C CNN
 F 3 "~" H 5650 6350 50  0001 C CNN
 	1    5650 6350
 	0    1    1    0   
@@ -1128,4 +1102,32 @@ Connection ~ 5600 6650
 Wire Wire Line
 	5800 6350 6150 6350
 Connection ~ 6150 6350
+Connection ~ 1550 4500
+Wire Wire Line
+	1550 4500 1550 4550
+Text GLabel 1500 4550 0    50   Input ~ 0
+batt+
+Wire Wire Line
+	1550 4550 1500 4550
+$Comp
+L power:GND #PWR0114
+U 1 1 5FEB223F
+P 8400 5000
+F 0 "#PWR0114" H 8400 4750 50  0001 C CNN
+F 1 "GND" H 8405 4827 50  0000 C CNN
+F 2 "" H 8400 5000 50  0001 C CNN
+F 3 "" H 8400 5000 50  0001 C CNN
+	1    8400 5000
+	1    0    0    -1  
+$EndComp
+Connection ~ 8400 5000
+Wire Wire Line
+	8400 5000 7850 5000
+Wire Wire Line
+	5050 7150 5050 7550
+Wire Wire Line
+	8350 4900 8350 5550
+Wire Wire Line
+	3950 5550 8350 5550
+NoConn ~ 6850 4900
 $EndSCHEMATC
