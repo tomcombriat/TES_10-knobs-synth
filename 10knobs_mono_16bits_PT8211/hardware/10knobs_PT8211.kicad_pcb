@@ -87,7 +87,7 @@
       (mirror false)
       (drillshape 1)
       (scaleselection 1)
-      (outputdirectory ""))
+      (outputdirectory "PCB/"))
   )
 
   (net 0 "")
@@ -3119,7 +3119,7 @@
   (segment (start 109.014 76.414) (end 109.4 76.8) (width 0.23) (layer B.Cu) (net 37))
   (segment (start 101.495 78.1) (end 101.495 76.9597) (width 0.23) (layer B.Cu) (net 37))
 
-  (zone (net 11) (net_name GND) (layer B.Cu) (tstamp 0) (hatch edge 0.508)
+  (zone (net 11) (net_name GND) (layer B.Cu) (tstamp 6005A27D) (hatch edge 0.508)
     (connect_pads (clearance 0.508))
     (min_thickness 0.254)
     (fill yes (arc_segments 16) (thermal_gap 0.508) (thermal_bridge_width 0.508))
