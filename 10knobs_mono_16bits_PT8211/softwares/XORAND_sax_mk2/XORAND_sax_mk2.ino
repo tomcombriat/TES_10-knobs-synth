@@ -4,17 +4,21 @@
   XORAND Sax mk2
   A 10k synth flavor to be used with an EWI. Supports polyphony (for chords) and breath control over volume or/and filter.
 
-   
+
    To change from mozzi original:
        -   unsigned long update_step_counter;
        -   unsigned long update_steps;
        -   unsigned long num_update_steps;   in ADSR.h (L51)
        -   unsigned long convertMsecToControlUpdateSteps(unsigned int msec){
            return (uint32_t) (((uint32_t)msec*CONTROL_UPDATE_RATE)>>10); // approximate /1000 with shift
-  Or use the TES-branch of tomcombriat/Mozzi.
+  Or use the TES-branch of tomcombriat/Mozzi
 
-  
-  Mozzi config should be set to use an external audio
+
+  Mozzi config should be set as follow:
+  #define EXTERNAL_AUDIO_OUTPUT true
+  #define EXTERNAL_AUDIO_BITS 16
+
+
   Compilation should be -O3, OC @ 128MHz.
 
   TODO: battery check.
@@ -39,17 +43,17 @@
 #include <AudioDelayFeedback.h>
 #include <Portamento.h>
 #include "midi_handles.h"
-#include <DAC_MCP49xx.h>  // https://github.com/tomcombriat/DAC_MCP49XX 
-// which is an adapted fork from https://github.com/exscape/electronics/tree/master/Arduino/Libraries/DAC_MCP49xx  (Thomas Backman)
+#include <SPI.h>
 
-
-#define POLYPHONY 8
+#define POLYPHONY 5
 #define CONTROL_RATE 2048 // Hz, powers of 2 are most reliable
 
 #define LED PA8
 #define BREATH_LIN
 //#define BREATH_LOG
 //#define BREATH_EXP
+
+//#define AUDIO_BIAS 0
 
 
 
@@ -89,15 +93,12 @@ Q15n16 vibrato;
 
 // External audio output parameters and DAC declaration
 SPIClass mySPI(2);
-#define SS_PIN PB12  // if you are on AVR and using PortWrite you need still need to put the pin you are actually using: 7 on Uno, 38 on Mega
-#define AUDIO_BIAS 8388608  // we are at 24 bits, so we have to bias the signal of 2^(24-1) = 8388608
-#define BITS_PER_CHANNEL 12  // each channel of the DAC is outputting 12 bits
-DAC_MCP49xx dac(DAC_MCP49xx::MCP4922, SS_PIN);
+#define WS_pin PB8
 
 
 
 
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial3, MIDI);
 
 
 
@@ -148,8 +149,11 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-  dac.init(&mySPI);
+  //Serial.begin(115200);
+
+  pinMode(WS_pin, OUTPUT);
   pinMode(LED, OUTPUT);
+  delay(100);
   digitalWrite(LED, HIGH);
   pinMode(PB1, INPUT);
   pinMode(PB0, INPUT);
@@ -160,6 +164,14 @@ void setup() {
   pinMode(PA5, INPUT);
   pinMode(PA6, INPUT);
   pinMode(PA7, INPUT);
+
+
+  mySPI.begin();
+  delay(1000);
+  mySPI.beginTransaction(SPISettings(2000000000, MSBFIRST, SPI_MODE0)); //MSB first, according to the DAC spec
+
+
+
 
   for (byte i = 0; i < POLYPHONY; i++)
   {
@@ -193,7 +205,7 @@ void setup() {
   MIDI.setHandlePitchBend(HandlePitchBend);
   MIDI.setHandleAfterTouchChannel(HandleAfterTouchChannel);
 
- // Serial.begin(115200);
+
 
 
   MIDI.begin(MIDI_CHANNEL_OMNI);
@@ -202,10 +214,11 @@ void setup() {
   delay(100);
   digitalWrite(LED, HIGH);
   delay(100);
-
+  //Serial.println(AUDIO_BIAS);
   MIDI.turnThruOff (); //for speed
   startMozzi(CONTROL_RATE);
   digitalWrite(LED, LOW);
+
 
 }
 
@@ -219,16 +232,18 @@ void loop() {
   audioHook();
 }
 
-
-void audioOutput(int l, int r)
+long samp;
+void audioOutput(const AudioOutput f) // f is a structure containing both channels
 {
+  //Serial.println(f.l()>>8);
+  // analogWrite(LED, f.l()>>8);
+  digitalWrite(WS_pin, LOW);  //select Right channel
+  mySPI.transfer16(f.l());
 
-  l += AUDIO_BIAS;
 
-  unsigned short lowBits = (unsigned short) l;
-  unsigned short highBits =  l >> BITS_PER_CHANNEL;
-
-  dac.output2(lowBits, highBits);  // outputs the two channels in one call.
+  digitalWrite(WS_pin, HIGH);  // select Left channel
+  //  mySPI.transfer16(f.l());
+  //digitalWrite(LED, HIGH);
 }
 
 
@@ -236,11 +251,10 @@ void audioOutput(int l, int r)
 
 void updateControl() {
 
-  while (MIDI.read());
-  //set_freq(0);
-  //Serial.println(volume);
+  while (MIDI.read())
 
-  toggle++;
+
+    toggle++;
 
   switch (toggle)
   {
@@ -282,26 +296,17 @@ void updateControl() {
       toggle = 0;
       break;
   }
-  //Serial.println(breath_sens);
-
-  /*
-    for (byte i = 0; i < POLYPHONY; i++)
-    {
-      modulation[i] = (LFO[i].next());
-    }
-*/
-//unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume]))*breath_sens)>>7)-(breath_sens  - 127); 
-//Serial.println(breath_next);
+  // Serial.println(samp >>8 );
 }
 
-int updateAudio() {
+AudioOutput_t updateAudio() {
 
   long sample = 0;
   //envelope_audio.update();
 
 
 
-unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume]))*breath_sens)>>8)-(breath_sens  - 255); // this could be done in updatecontrol() maybe? for speed? And the following also
+  unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume])) * breath_sens) >> 8) - (breath_sens  - 255); // this could be done in updatecontrol() maybe? for speed? And the following also
   //if (breath_next == 0)
   if (volume == 0)
   {
@@ -364,7 +369,7 @@ unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume]))*brea
       //sample += envelope_audio.next() * (((((partial_sample * (breath_smooth.next(breath_to_volume[volume]))) ) * modulation[i]) >> 16)); //is played actively now
 
       //sample +=  (partial_sample * (breath_next * envelope[i].next()) >> 2)  >> 10;
-      sample += (partial_sample * env_next) >>1;
+      sample += (partial_sample * env_next) >> 1;
 
       //else sample += (((partial_sample * (envelope[i].next())) >> 8) * modulation[i]) >> 9 ;  //is played actively now
     }
@@ -373,32 +378,12 @@ unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume]))*brea
   sample = (sample * breath_next)  ;
 
 
-  // int env = envelope[0].next();
-  //int env = envelope_audio.next();
 
-
-
-  /*
-    sample += (((delay_level * aDel.next(byte(sample >> 2), ((Q16n16) 2048) << 16 )) >> 8) * env) >> 8 ;
-    sample += (((delay_level * aDel2.next(byte(sample >> 2), ((Q16n16) 1801) << 16 )) >> 10) * env) >> 8 ;
-
-  */
 
   sample = lpf.next(sample);
-  if (sample > AUDIO_BIAS - 5)
-  {
-    digitalWrite(LED, HIGH);
+  return MonoOutput::fromNBit(24, sample);
 
-    sample = AUDIO_BIAS - 5;
-  }
-  else if (sample < -AUDIO_BIAS + 5)
-  {
-    sample = -AUDIO_BIAS + 5;
-  }
-  else if (digitalRead(LED)) digitalWrite(LED, LOW);
-
-
-  return sample;
+  //return sample;
 
 }
 

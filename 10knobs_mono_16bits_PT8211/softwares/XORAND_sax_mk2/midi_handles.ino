@@ -7,6 +7,8 @@
  ********************/
 void HandleNoteOn(byte channel, byte note, byte velocity)
 {
+  
+  //digitalWrite(LED, HIGH);
   byte min_rank = 255;
   int empty_arg = -1;
   for (byte i = 0; i < POLYPHONY; i++)  //take a non playing oscil
@@ -105,6 +107,8 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
 
 void HandleNoteOff(byte channel, byte note, byte velocity)
 {
+  
+  //digitalWrite(LED, LOW);
   byte to_kill = 255;
   byte min_rank = 255;
 
