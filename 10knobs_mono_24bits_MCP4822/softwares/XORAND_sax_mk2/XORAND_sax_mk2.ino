@@ -97,7 +97,7 @@ DAC_MCP49xx dac(DAC_MCP49xx::MCP4922, SS_PIN);
 
 
 
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial3, MIDI);
 
 
 
@@ -219,7 +219,7 @@ void loop() {
   audioHook();
 }
 
-
+/*
 void audioOutput(int l, int r)
 {
 
@@ -230,7 +230,18 @@ void audioOutput(int l, int r)
 
   dac.output2(lowBits, highBits);  // outputs the two channels in one call.
 }
+*/
 
+void audioOutput(const AudioOutput f)
+{
+  int l = f.l();
+  l += AUDIO_BIAS;
+
+  unsigned short lowBits = (unsigned short) l;
+  unsigned short highBits =  l >> BITS_PER_CHANNEL;
+
+  dac.output2(lowBits, highBits);  // outputs the two channels in one call.
+}
 
 
 
@@ -294,7 +305,7 @@ void updateControl() {
 //Serial.println(breath_next);
 }
 
-int updateAudio() {
+AudioOutput_t updateAudio() {
 
   long sample = 0;
   //envelope_audio.update();
