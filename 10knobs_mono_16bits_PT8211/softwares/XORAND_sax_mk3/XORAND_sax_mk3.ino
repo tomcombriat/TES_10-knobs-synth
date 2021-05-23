@@ -1,7 +1,7 @@
 /*
    Combriat 2020
 
-  XORAND Sax mk2
+  XORAND Sax mk3
   A 10k synth flavor to be used with an EWI. Supports polyphony (for chords) and breath control over volume or/and filter.
 
 
@@ -26,6 +26,7 @@
 #include <MozziGuts.h>
 #include <Oscil.h>
 #include<MetaOscil.h>
+#include<SPI.h>
 
 
 #include <mozzi_midi.h>
@@ -37,8 +38,6 @@
 #include <Portamento.h>
 #include "midi_handles.h"
 #include "oscil_declaration.h"
-#include <DAC_MCP49xx.h>  // https://github.com/tomcombriat/DAC_MCP49XX 
-// which is an adapted fork from https://github.com/exscape/electronics/tree/master/Arduino/Libraries/DAC_MCP49xx  (Thomas Backman)
 
 
 #define CONTROL_RATE 2048 // Hz, powers of 2 are most reliable
@@ -291,7 +290,7 @@ AudioOutput_t updateAudio() {
 
 
 
-  unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume])) * breath_sens) >> 7) - ((breath_sens  - 255)<<1); // this could be done in updatecontrol() maybe? for speed? And the following also
+  int breath_next = (((breath_smooth.next(breath_to_volume[volume])) * breath_sens) >> 5) - ((breath_sens  - 255)<<3); // this could be done in updatecontrol() maybe? for speed? And the following also
   //if (breath_next == 0)
   if (volume == 0)
   {
@@ -335,8 +334,8 @@ AudioOutput_t updateAudio() {
       }
 
 
-      int oscil1 = (((aSin_next * (255 - mix1) + aSquare_next * (mix1)) >> 8 ) * (255 - mix_oscil)) >> 8 ;
-      int oscil2 = (((aTri_next * (255 - mix2) + aSaw_next * (mix2)) >> 8 ) * mix_oscil) >> 8;
+      int oscil1 = (((aSin_next * (255 - mix1) + aSquare_next * (mix1)) >> 8 ) * (255 - mix_oscil)) >> 5 ;
+      int oscil2 = (((aTri_next * (255 - mix2) + aSaw_next * (mix2)) >> 8 ) * mix_oscil) >> 5;
 
       int dry = oscil1 + oscil2;
       int wet1 = (oscil1 xor oscil2);
@@ -352,7 +351,7 @@ AudioOutput_t updateAudio() {
     }
   }
 
-  sample = (sample * breath_next)  ;
+  sample = (sample * breath_next) >>5 ;
 
   sample = lpf.next(sample);
   /*
@@ -369,7 +368,7 @@ AudioOutput_t updateAudio() {
   else if (digitalRead(LED)) digitalWrite(LED, LOW);
 */
 
-  return MonoOutput::fromNBit(24, sample).clip();  // .26
+  return MonoOutput::fromNBit(24, sample).clip();  
 
 }
 
