@@ -11,14 +11,10 @@
        -   unsigned long num_update_steps;   in ADSR.h (L51)
        -   unsigned long convertMsecToControlUpdateSteps(unsigned int msec){
            return (uint32_t) (((uint32_t)msec*CONTROL_UPDATE_RATE)>>10); // approximate /1000 with shift
-  Or use the TES-branch of tomcombriat/Mozzi
+  Or use the TES-branch of tomcombriat/Mozzi.
 
 
-  Mozzi config should be set as follow:
-  #define EXTERNAL_AUDIO_OUTPUT true
-  #define EXTERNAL_AUDIO_BITS 16
-
-
+  Mozzi config should be set to use an external audio
   Compilation should be -O3, OC @ 128MHz.
 
   TODO: battery check.
@@ -29,12 +25,9 @@
 #include <MIDI.h>
 #include <MozziGuts.h>
 #include <Oscil.h>
-#include <tables/cos2048_int8.h> // table for Oscils to play
-#include <tables/square_no_alias_2048_int8.h>
-#include <tables/saw_no_alias_2048_int8.h>
-#include <tables/saw2048_int8.h>
+#include<MetaOscil.h>
 
-#include <tables/triangle2048_int8.h>
+
 #include <mozzi_midi.h>
 #include <mozzi_fixmath.h>
 #include <Smooth.h>
@@ -43,9 +36,11 @@
 #include <AudioDelayFeedback.h>
 #include <Portamento.h>
 #include "midi_handles.h"
-#include <SPI.h>
+#include "oscil_declaration.h"
+#include <DAC_MCP49xx.h>  // https://github.com/tomcombriat/DAC_MCP49XX 
+// which is an adapted fork from https://github.com/exscape/electronics/tree/master/Arduino/Libraries/DAC_MCP49xx  (Thomas Backman)
 
-#define POLYPHONY 5
+
 #define CONTROL_RATE 2048 // Hz, powers of 2 are most reliable
 
 #define LED PA8
@@ -53,16 +48,9 @@
 //#define BREATH_LOG
 //#define BREATH_EXP
 
-//#define AUDIO_BIAS 0
-
 
 
 Oscil<COS2048_NUM_CELLS, AUDIO_RATE> aSin[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
-Oscil<SQUARE_NO_ALIAS_2048_NUM_CELLS, AUDIO_RATE> aSquare[POLYPHONY] = Oscil<SQUARE_NO_ALIAS_2048_NUM_CELLS, AUDIO_RATE>(SQUARE_NO_ALIAS_2048_DATA);
-Oscil<TRIANGLE2048_NUM_CELLS, AUDIO_RATE> aTri[POLYPHONY] = Oscil<TRIANGLE2048_NUM_CELLS, AUDIO_RATE>(TRIANGLE2048_DATA);
-Oscil<SAW_NO_ALIAS_2048_NUM_CELLS, AUDIO_RATE> aSaw[POLYPHONY] = Oscil<SAW_NO_ALIAS_2048_NUM_CELLS, AUDIO_RATE>(SAW_NO_ALIAS_2048_DATA);
-//Oscil<SAW2048_NUM_CELLS, AUDIO_RATE> aSaw[POLYPHONY] = Oscil<SAW2048_NUM_CELLS, AUDIO_RATE>(SAW2048_DATA);
-//Oscil<COS2048_NUM_CELLS, CONTROL_RATE> LFO[POLYPHONY] = Oscil<COS2048_NUM_CELLS, CONTROL_RATE> (COS2048_DATA);
 Oscil<COS2048_NUM_CELLS, AUDIO_RATE> LFO[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
 
 
@@ -107,10 +95,7 @@ void set_freq(byte i, bool reset_phase = false)
 
   osc_is_on[i] = true;
   Q16n16 freq = Q16n16_mtof(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp);
-  //Q16n16 freq = porta.next() + Q16n16_mtof(pitchbend << 4) ; // mettre plutot   Q16n16_mtof((pitchbend << 4) + porta.next())
 
-  //Q16n16 freq = Q16n16_mtof(Q8n0_to_Q16n16(notes[i]));
-  //Serial.println(Q16n16_to_float(modulation[i]));
   aSin[i].setFreq_Q16n16(freq);
   aSquare[i].setFreq_Q16n16(freq);
   aTri[i].setFreq_Q16n16(freq);
@@ -149,11 +134,12 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-  //Serial.begin(115200);
-
-  pinMode(WS_pin, OUTPUT);
-  pinMode(LED, OUTPUT);
+  mySPI.begin();
   delay(100);
+  mySPI.beginTransaction(SPISettings(2000000000, MSBFIRST, SPI_MODE0)); //MSB first, according to the DAC spec
+  
+  pinMode(LED, OUTPUT);
+  pinMode(WS_pin, OUTPUT);
   digitalWrite(LED, HIGH);
   pinMode(PB1, INPUT);
   pinMode(PB0, INPUT);
@@ -165,19 +151,19 @@ void setup() {
   pinMode(PA6, INPUT);
   pinMode(PA7, INPUT);
 
-
-  mySPI.begin();
-  delay(1000);
-  mySPI.beginTransaction(SPISettings(2000000000, MSBFIRST, SPI_MODE0)); //MSB first, according to the DAC spec
-
-
-
-
   for (byte i = 0; i < POLYPHONY; i++)
   {
-    aSaw[i].setPhase(2048 >> 2 );
+
     envelope[i].setADLevels(128, 128);
     envelope[i].setTimes(1, 1, 65000, 10);
+    aSquare[i].setOscils(&aSq75[i], &aSq81[i], &aSq88[i], &aSq96[i], &aSq106[i], &aSq118[i], &aSq134[i], &aSq154[i], &aSq182[i], &aSq221[i], &aSq282[i], &aSq356[i], &aSq431[i], &aSq546[i], &aSq630[i], &aSq744[i], &aSq910[i], &aSq1170[i], &aSq1638[i], &aSq2730[i], &aSq8192[i]);
+    aSquare[i].setCutoffFreqs(75 * 2, 81 * 2, 88 * 2, 96 * 2, 106 * 2, 118 * 2, 134 * 2, 154 * 2, 182 * 2, 221 * 2, 282 * 2, 356 * 2, 431 * 2, 546 * 2, 630 * 2, 744 * 2, 910 * 2, 1170 * 2, 1638 * 2, 2730 * 2, 8192 * 2);
+
+    aSaw[i].setOscils(&aSaw154[i], &aSaw182[i], &aSaw221[i], &aSaw282[i], &aSaw356[i], &aSaw431[i], &aSaw546[i], &aSaw630[i], &aSaw744[i], &aSaw910[i], &aSaw1170[i], &aSaw1638[i], &aSaw2730[i], &aSaw8192[i]);
+    aSaw[i].setCutoffFreqs( 154 * 2, 182 * 2, 221 * 2, 282 * 2, 356 * 2, 431 * 2, 546 * 2, 630 * 2, 744 * 2, 910 * 2, 1170 * 2, 1638 * 2, 2730 * 2, 8192 * 2);
+    aTri[i].setOscils(&aTri106[i], &aTri118[i], &aTri134[i], &aTri154[i], &aTri182[i], &aTri221[i], &aTri282[i], &aTri356[i], &aTri431[i], &aTri546[i], &aTri630[i], &aTri744[i], &aTri910[i], &aTri1170[i], &aTri1638[i], &aTri2730[i], &aTri8192[i]);
+    aTri[i].setCutoffFreqs( 106 * 2, 118 * 2, 134 * 2, 154 * 2, 182 * 2, 221 * 2, 282 * 2, 356 * 2, 431 * 2, 546 * 2, 630 * 2, 744 * 2, 910 * 2, 1170 * 2, 1638 * 2, 2730 * 2, 8192 * 2);
+   aSaw[i].setPhase(512 >> 2 );
   }
 
   for (int i = 0; i < 128; i++)
@@ -193,8 +179,6 @@ void setup() {
 #endif
 
   }
-  // envelope_audio.setADLevels(128, 128);
-  //envelope_audio.setTimes(1, 1, 65000, 100);
   lpf.setResonance(25);
 
 
@@ -205,7 +189,7 @@ void setup() {
   MIDI.setHandlePitchBend(HandlePitchBend);
   MIDI.setHandleAfterTouchChannel(HandleAfterTouchChannel);
 
-
+ // Serial.begin(115200);
 
 
   MIDI.begin(MIDI_CHANNEL_OMNI);
@@ -214,11 +198,10 @@ void setup() {
   delay(100);
   digitalWrite(LED, HIGH);
   delay(100);
-  //Serial.println(AUDIO_BIAS);
+
   MIDI.turnThruOff (); //for speed
   startMozzi(CONTROL_RATE);
   digitalWrite(LED, LOW);
-
 
 }
 
@@ -232,7 +215,9 @@ void loop() {
   audioHook();
 }
 
-long samp;
+
+
+
 void audioOutput(const AudioOutput f) // f is a structure containing both channels
 {
   //Serial.println(f.l()>>8);
@@ -251,10 +236,11 @@ void audioOutput(const AudioOutput f) // f is a structure containing both channe
 
 void updateControl() {
 
-  while (MIDI.read())
+  while (MIDI.read());
+  //set_freq(0);
+  //Serial.println(volume);
 
-
-    toggle++;
+  toggle++;
 
   switch (toggle)
   {
@@ -296,7 +282,6 @@ void updateControl() {
       toggle = 0;
       break;
   }
-  // Serial.println(samp >>8 );
 }
 
 AudioOutput_t updateAudio() {
@@ -319,7 +304,6 @@ AudioOutput_t updateAudio() {
   }
 
 
-  //vibrato = (Q15n16) 32 * LFO[0].next();
   vibrato = ((Q15n16)  LFO[0].next()) << 4;
   for (byte i = 0; i < POLYPHONY; i++)
   {
@@ -362,28 +346,30 @@ AudioOutput_t updateAudio() {
       partial_sample += ((three_values_knob(wet_dry_mix, 0) >> 1) * wet1) >> 8 ;
       partial_sample += ((three_values_knob(wet_dry_mix, 1) >> 1) * dry) >> 8 ;
       partial_sample += ((three_values_knob(wet_dry_mix, 2) >> 1) * wet2) >> 8 ;
-      // sample += ((wet_dry_mix) * wet) >> 8;
 
-      //sample += (((((partial_sample * (breath_to_volume[volume])) >> 8) * modulation[i]) >> 8) * envelope_audio.next()) >> 8 ; //is played actively now
-      //sample += (((((partial_sample * (breath_to_volume[volume])) >> 8) * modulation[i]) >> 7) ); //is played actively now
-      //sample += envelope_audio.next() * (((((partial_sample * (breath_smooth.next(breath_to_volume[volume]))) ) * modulation[i]) >> 16)); //is played actively now
-
-      //sample +=  (partial_sample * (breath_next * envelope[i].next()) >> 2)  >> 10;
       sample += (partial_sample * env_next) >> 1;
 
-      //else sample += (((partial_sample * (envelope[i].next())) >> 8) * modulation[i]) >> 9 ;  //is played actively now
     }
   }
 
   sample = (sample * breath_next)  ;
 
-
-
-
   sample = lpf.next(sample);
-  return MonoOutput::fromNBit(24, sample);
+  /*
+  if (sample > AUDIO_BIAS - 5)
+  {
+    digitalWrite(LED, HIGH);
 
-  //return sample;
+    sample = AUDIO_BIAS - 5;
+  }
+  else if (sample < -AUDIO_BIAS + 5)
+  {
+    sample = -AUDIO_BIAS + 5;
+  }
+  else if (digitalRead(LED)) digitalWrite(LED, LOW);
+*/
+
+  return MonoOutput::fromNBit(24, sample);
 
 }
 
