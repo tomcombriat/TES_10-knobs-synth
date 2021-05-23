@@ -50,7 +50,7 @@
 
 
 
-Oscil<COS2048_NUM_CELLS, AUDIO_RATE> aSin[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
+Oscil<COS512_NUM_CELLS, AUDIO_RATE> aSin[POLYPHONY] = Oscil<COS512_NUM_CELLS, AUDIO_RATE> (COS512_DATA);
 Oscil<COS2048_NUM_CELLS, AUDIO_RATE> LFO[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
 
 
@@ -291,7 +291,7 @@ AudioOutput_t updateAudio() {
 
 
 
-  unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume])) * breath_sens) >> 8) - (breath_sens  - 255); // this could be done in updatecontrol() maybe? for speed? And the following also
+  unsigned int breath_next = (((breath_smooth.next(breath_to_volume[volume])) * breath_sens) >> 7) - ((breath_sens  - 255)<<1); // this could be done in updatecontrol() maybe? for speed? And the following also
   //if (breath_next == 0)
   if (volume == 0)
   {
@@ -369,7 +369,7 @@ AudioOutput_t updateAudio() {
   else if (digitalRead(LED)) digitalWrite(LED, LOW);
 */
 
-  return MonoOutput::fromNBit(24, sample);
+  return MonoOutput::fromNBit(24, sample).clip();  // .26
 
 }
 

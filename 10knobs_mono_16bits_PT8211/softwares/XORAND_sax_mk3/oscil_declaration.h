@@ -143,7 +143,7 @@ MetaOscil<TRI_MAX_106_AT_16384_512_NUM_CELLS, AUDIO_RATE, 17> aTri[POLYPHONY];
 
 
 #include <tables/cos2048_int8.h>
-
+#include <tables/cos512_int8.h>
 
 
 
