@@ -133,13 +133,15 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
+    pinMode(LED, OUTPUT);
+      digitalWrite(LED, HIGH);
   mySPI.begin();
   delay(100);
   mySPI.beginTransaction(SPISettings(2000000000, MSBFIRST, SPI_MODE0)); //MSB first, according to the DAC spec
   
-  pinMode(LED, OUTPUT);
+
   pinMode(WS_pin, OUTPUT);
-  digitalWrite(LED, HIGH);
+
   pinMode(PB1, INPUT);
   pinMode(PB0, INPUT);
   pinMode(PA1, INPUT);
@@ -263,7 +265,7 @@ void updateControl() {
       break;
     case 7:
       breath_on_cutoff = kSmoothInput(mozziAnalogRead(PA4) >> 4);
-      cutoff = ((breath_on_cutoff * volume) >> 8 ) + midi_cutoff;  // >>7
+      cutoff = ((breath_on_cutoff * volume) >> 7 ) + midi_cutoff;  // >>8
       if (cutoff > 255) cutoff = 255;
       if (cutoff != prev_cutoff || resonance != prev_resonance)
       {
