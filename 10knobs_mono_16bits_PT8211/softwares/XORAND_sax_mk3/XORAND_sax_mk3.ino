@@ -222,7 +222,7 @@ void updateControl() {
 
   while (MIDI.read());
   //set_freq(0);
-  Serial.println((((breath_smooth.next((volume >> 7))) * breath_sens) >> 5) - ((breath_sens  - 255)<<3));
+  //Serial.println(volume>>7);
 
   toggle++;
 
@@ -339,19 +339,7 @@ AudioOutput_t updateAudio() {
   sample = (sample * breath_next) >>5 ;
 
   sample = lpf.next(sample);
-  /*
-  if (sample > AUDIO_BIAS - 5)
-  {
-    digitalWrite(LED, HIGH);
 
-    sample = AUDIO_BIAS - 5;
-  }
-  else if (sample < -AUDIO_BIAS + 5)
-  {
-    sample = -AUDIO_BIAS + 5;
-  }
-  else if (digitalRead(LED)) digitalWrite(LED, LOW);
-*/
 
   return MonoOutput::fromNBit(24, sample).clip();  
 
