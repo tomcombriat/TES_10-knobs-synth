@@ -43,10 +43,6 @@
 #define CONTROL_RATE 2048 // Hz, powers of 2 are most reliable
 
 #define LED PA8
-#define BREATH_LIN
-//#define BREATH_LOG
-//#define BREATH_EXP
-
 
 
 Oscil<COS512_NUM_CELLS, AUDIO_RATE> aSin[POLYPHONY] = Oscil<COS512_NUM_CELLS, AUDIO_RATE> (COS512_DATA);
@@ -64,13 +60,12 @@ byte notes[POLYPHONY] = {0};
 int wet_dry_mix, modulation[POLYPHONY];
 int mix1;
 int mix2;
-int mix_oscil, cutoff = 0, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, prev_cutoff = 0, breath_on_cutoff = 0, midi_cutoff = 255, resonance = 0, prev_resonance = 0, breath_sens = 0;
-byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, volume = 0, delay_volume = 0;
+int mix_oscil, cutoff = 0, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, prev_cutoff = 0, breath_on_cutoff = 0, midi_cutoff = 255, resonance = 0, prev_resonance = 0, breath_sens = 0,volume = 0;
+byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, delay_volume = 0;
 bool sustain = false;
 bool mod = true;
 bool osc_is_on[POLYPHONY] = {false};
 unsigned int chord_attack = 1, chord_release = 1;
-byte breath_to_volume[128];
 int toggle = 0;
 Q15n16 vibrato;
 
@@ -167,19 +162,7 @@ void setup() {
    aSaw[i].setPhase(512 >> 2 );
   }
 
-  for (int i = 0; i < 128; i++)
-  {
-#ifdef BREATH_LOG
-    breath_to_volume[i] = 255 * (1 - exp(-0.04 * i));
-#endif
-#ifdef BREATH_LIN
-    breath_to_volume[i] = 2 * i;
-#endif
-#ifdef BREATH_EXP
-    breath_to_volume[i] = exp(i / 23.);
-#endif
 
-  }
   lpf.setResonance(25);
 
 
@@ -190,7 +173,7 @@ void setup() {
   MIDI.setHandlePitchBend(HandlePitchBend);
   MIDI.setHandleAfterTouchChannel(HandleAfterTouchChannel);
 
- // Serial.begin(115200);
+  Serial.begin(115200);
 
 
   MIDI.begin(MIDI_CHANNEL_OMNI);
@@ -239,7 +222,7 @@ void updateControl() {
 
   while (MIDI.read());
   //set_freq(0);
-  //Serial.println(volume);
+  Serial.println((((breath_smooth.next((volume >> 7))) * breath_sens) >> 5) - ((breath_sens  - 255)<<3));
 
   toggle++;
 
@@ -265,7 +248,7 @@ void updateControl() {
       break;
     case 7:
       breath_on_cutoff = kSmoothInput(mozziAnalogRead(PA4) >> 4);
-      cutoff = ((breath_on_cutoff * volume) >> 7 ) + midi_cutoff;  // >>8
+      cutoff = ((breath_on_cutoff * volume) >> 13 ) + midi_cutoff;  // >>8
       if (cutoff > 255) cutoff = 255;
       if (cutoff != prev_cutoff || resonance != prev_resonance)
       {
@@ -292,9 +275,9 @@ AudioOutput_t updateAudio() {
 
 
 
-  int breath_next = (((breath_smooth.next(breath_to_volume[volume])) * breath_sens) >> 5) - ((breath_sens  - 255)<<3); // this could be done in updatecontrol() maybe? for speed? And the following also
+  int breath_next = (((breath_smooth.next((volume >> 7))) * breath_sens) >> 5) - ((breath_sens  - 255)<<3); // this could be done in updatecontrol() maybe? for speed? And the following also
   //if (breath_next == 0)
-  if (volume == 0)
+  if ((volume >> 7) == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)
     {

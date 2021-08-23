@@ -63,7 +63,7 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
     envelope[empty_arg].setAttackTime(chord_attack);
     envelope[empty_arg].noteOn(true);
   }
-  else 
+  else
   {
     envelope[empty_arg].setAttackTime(1);
     envelope[empty_arg].noteOn();
@@ -165,10 +165,12 @@ void HandleControlChange(byte channel, byte control, byte val)
       break;
 
     case 74: //volume
-      volume = val;
-      /*if (val == 0) {
-        for (byte i = 0; i < POLYPHONY; i++) osc_is_on[i] = false;
-        }*/
+      volume = val << 7;
+
+    case 75: //volume
+      volume & 0b11111110000000;
+      volume += val;
+
       break;
 
     case 71: //cutoff
