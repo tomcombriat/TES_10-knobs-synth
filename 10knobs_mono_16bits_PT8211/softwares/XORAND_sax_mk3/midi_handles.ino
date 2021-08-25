@@ -165,7 +165,8 @@ void HandleControlChange(byte channel, byte control, byte val)
       break;
 
     case 74: //volume
-      volume = (int) (val) << 7;
+    volume &= 0b00000001111111;
+      volume += (int) (val) << 7;
 
     case 75: //volume
       volume &= 0b11111110000000;

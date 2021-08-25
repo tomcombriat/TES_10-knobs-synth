@@ -51,8 +51,8 @@ Oscil<COS2048_NUM_CELLS, AUDIO_RATE> LFO[POLYPHONY] = Oscil<COS2048_NUM_CELLS, A
 
 ADSR <AUDIO_RATE, AUDIO_RATE> envelope[POLYPHONY];
 
-LowPassFilter lpf;
-Smooth <int> kSmoothInput(0.2f);
+LowPassFilter16 lpf;
+Smooth <unsigned int> cutoff_smooth(0.99f);
 Smooth <int> breath_smooth(0.2f);  // increase ????
 //Portamento<CONTROL_RATE> porta;
 
@@ -60,12 +60,12 @@ byte notes[POLYPHONY] = {0};
 int wet_dry_mix, modulation[POLYPHONY];
 int mix1;
 int mix2;
-int mix_oscil, cutoff = 0, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, prev_cutoff = 0, breath_on_cutoff = 0, midi_cutoff = 255, resonance = 0, prev_resonance = 0, breath_sens = 0,volume = 0;
+int mix_oscil, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, breath_on_cutoff = 0, resonance = 0, prev_resonance = 0, breath_sens = 0, volume = 0;
 byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, delay_volume = 0;
 bool sustain = false;
 bool mod = true;
 bool osc_is_on[POLYPHONY] = {false};
-unsigned int chord_attack = 1, chord_release = 1;
+unsigned int chord_attack = 1, chord_release = 1,cutoff = 0,prev_cutoff = 0,midi_cutoff = 127;
 int toggle = 0;
 Q15n16 vibrato;
 
@@ -128,12 +128,13 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-    pinMode(LED, OUTPUT);
-      digitalWrite(LED, HIGH);
+  //Serial.begin(115200);
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, HIGH);
   mySPI.begin();
   delay(100);
   mySPI.beginTransaction(SPISettings(2000000000, MSBFIRST, SPI_MODE0)); //MSB first, according to the DAC spec
-  
+
 
   pinMode(WS_pin, OUTPUT);
 
@@ -159,7 +160,7 @@ void setup() {
     aSaw[i].setCutoffFreqs( 154 * 2, 182 * 2, 221 * 2, 282 * 2, 356 * 2, 431 * 2, 546 * 2, 630 * 2, 744 * 2, 910 * 2, 1170 * 2, 1638 * 2, 2730 * 2, 8192 * 2);
     aTri[i].setOscils(&aTri106[i], &aTri118[i], &aTri134[i], &aTri154[i], &aTri182[i], &aTri221[i], &aTri282[i], &aTri356[i], &aTri431[i], &aTri546[i], &aTri630[i], &aTri744[i], &aTri910[i], &aTri1170[i], &aTri1638[i], &aTri2730[i], &aTri8192[i]);
     aTri[i].setCutoffFreqs( 106 * 2, 118 * 2, 134 * 2, 154 * 2, 182 * 2, 221 * 2, 282 * 2, 356 * 2, 431 * 2, 546 * 2, 630 * 2, 744 * 2, 910 * 2, 1170 * 2, 1638 * 2, 2730 * 2, 8192 * 2);
-   aSaw[i].setPhase(512 >> 2 );
+    aSaw[i].setPhase(512 >> 2 );
   }
 
 
@@ -247,16 +248,9 @@ void updateControl() {
       chord_attack = mozziAnalogRead(PB1) >> 0 ;
       break;
     case 7:
-      breath_on_cutoff = kSmoothInput(mozziAnalogRead(PA4) >> 4);
-      cutoff = ((breath_on_cutoff * volume) >> 13 ) + midi_cutoff;  // >>8
-      if (cutoff > 255) cutoff = 255;
-      if (cutoff != prev_cutoff || resonance != prev_resonance)
-      {
-        lpf.setResonance(resonance);
-        lpf.setCutoffFreq(cutoff);
-        prev_cutoff = cutoff;
-        prev_resonance = resonance;
-      }
+      breath_on_cutoff = (mozziAnalogRead(PA4) >> 4);
+      //cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 13 ) + midi_cutoff);  // >>8
+
       break;
     case 8:
       resonance  = mozziAnalogRead(PA2) >> 4;
@@ -275,7 +269,28 @@ AudioOutput_t updateAudio() {
 
 
 
-  int breath_next = (((breath_smooth.next((volume >> 7))) * breath_sens) >> 5) - ((breath_sens  - 255)<<3); // this could be done in updatecontrol() maybe? for speed? And the following also
+
+
+      cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff<<9));  // >>8
+      //cutoff = (((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff<<9));  // >>8
+      //Serial.print(cutoff);
+      //Serial.print(" ");
+      //Serial.println(((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff<<9));
+      //Serial.println(cutoff);
+      if (cutoff > 65535) cutoff = 65535;
+      if (cutoff != prev_cutoff || resonance != prev_resonance)
+      {
+        lpf.setCutoffFreqAndResonance(cutoff, resonance<<8);
+
+        prev_cutoff = cutoff;
+        prev_resonance = resonance;
+      }
+
+
+
+      
+
+  int breath_next = (((breath_smooth.next((volume >> 7))) * breath_sens) >> 5) - ((breath_sens  - 255) << 3); // this could be done in updatecontrol() maybe? for speed? And the following also
   //if (breath_next == 0)
   if ((volume >> 7) == 0)
   {
@@ -336,12 +351,13 @@ AudioOutput_t updateAudio() {
     }
   }
 
-  sample = (sample * breath_next) >>5 ;
+  sample = (sample * breath_next) >> 5 ;
+  
 
   sample = lpf.next(sample);
 
 
-  return MonoOutput::fromNBit(24, sample).clip();  
+  return MonoOutput::fromNBit(24, sample).clip();
 
 }
 
