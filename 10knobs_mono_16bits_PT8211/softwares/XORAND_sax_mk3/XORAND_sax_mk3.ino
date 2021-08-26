@@ -61,7 +61,7 @@ int wet_dry_mix, modulation[POLYPHONY];
 int mix1;
 int mix2;
 int mix_oscil, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, breath_on_cutoff = 0, resonance = 0, prev_resonance = 0, breath_sens = 0, volume = 0;
-byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, delay_volume = 0;
+byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, delay_volume = 0, prev_MSB_volume = 0;
 bool sustain = false;
 bool mod = true;
 bool osc_is_on[POLYPHONY] = {false};

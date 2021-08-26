@@ -164,11 +164,13 @@ void HandleControlChange(byte channel, byte control, byte val)
       else if (val != 0 && !mod) mod = true;
       break;
 
-    case 74: //volume
-    volume &= 0b00000001111111;
-      volume += (int) (val) << 7;
+    case 74: //volume (MSB)
+    if (val > prev_MSB_volume || val & 0b00000001111111 != 0) volume = (int) (val) << 7;
+    else volume = ((int) (val) << 7) + 0b00000001111111;
+    //volume &= 0b00000001111111;
+      //volume += (int) (val) << 7;
 
-    case 75: //volume
+    case 75: //volume LSB
       volume &= 0b11111110000000;
       volume += val;
 
