@@ -52,6 +52,7 @@ Oscil<COS2048_NUM_CELLS, AUDIO_RATE> LFO[POLYPHONY] = Oscil<COS2048_NUM_CELLS, A
 ADSR <AUDIO_RATE, AUDIO_RATE> envelope[POLYPHONY];
 
 LowPassFilter16 lpf;
+//LowPassFilter lpf;
 Smooth <unsigned int> cutoff_smooth(0.99f);
 Smooth <int> breath_smooth(0.2f);  // increase ????
 //Portamento<CONTROL_RATE> porta;
@@ -253,7 +254,7 @@ void updateControl() {
 
       break;
     case 8:
-      resonance  = mozziAnalogRead(PA2) >> 4;
+      resonance  = mozziAnalogRead(PA2);
       break;
     case 9:
       breath_sens = mozziAnalogRead(PA1) >> 4;
@@ -280,7 +281,8 @@ AudioOutput_t updateAudio() {
       if (cutoff > 65535) cutoff = 65535;
       if (cutoff != prev_cutoff || resonance != prev_resonance)
       {
-        lpf.setCutoffFreqAndResonance(cutoff, resonance<<8);
+        lpf.setCutoffFreqAndResonance(cutoff, resonance<<4);
+ 
 
         prev_cutoff = cutoff;
         prev_resonance = resonance;
@@ -290,7 +292,7 @@ AudioOutput_t updateAudio() {
 
       
 
-  int breath_next = (((breath_smooth.next((volume >> 7))) * breath_sens) >> 5) - ((breath_sens  - 255) << 3); // this could be done in updatecontrol() maybe? for speed? And the following also
+  int breath_next = (((breath_smooth.next((volume >> 7))) * breath_sens) >> 4) - ((breath_sens  - 255) << 3); // this could be done in updatecontrol() maybe? for speed? And the following also
   //if (breath_next == 0)
   if ((volume >> 7) == 0)
   {
