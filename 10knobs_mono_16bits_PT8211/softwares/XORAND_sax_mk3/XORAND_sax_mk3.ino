@@ -53,8 +53,12 @@ ADSR <AUDIO_RATE, AUDIO_RATE> envelope[POLYPHONY];
 
 LowPassFilter16 lpf;
 //LowPassFilter lpf;
-Smooth <unsigned int> cutoff_smooth(0.99f);
-Smooth <int> breath_smooth(0.2f);  // increase ????
+Smooth <unsigned int> cutoff_smooth(0.999f);  // 0.999 -> 15ms
+                                              // 0.995 -> 7ms
+Smooth <int> breath_smooth(0.98f);  // if updated at AUDIO_RATE:
+                                    // 0.99 -> 15ms maximal raise time
+                                    // 0.98 -> 8ms
+                                    // 0.9999 -> 1.3s (!!!!)
 //Portamento<CONTROL_RATE> porta;
 
 byte notes[POLYPHONY] = {0};
@@ -66,7 +70,7 @@ byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, delay_volume = 0
 bool sustain = false;
 bool mod = true;
 bool osc_is_on[POLYPHONY] = {false};
-unsigned int chord_attack = 1, chord_release = 1,cutoff = 0,prev_cutoff = 0,midi_cutoff = 127;
+unsigned int chord_attack = 1, chord_release = 1,cutoff = 0,prev_cutoff = 0,midi_cutoff = 0;
 int toggle = 0;
 Q15n16 vibrato;
 
@@ -292,7 +296,8 @@ AudioOutput_t updateAudio() {
 
       
 
-  int breath_next = (((breath_smooth.next((volume >> 7))) * breath_sens) >> 4) - ((breath_sens  - 255) << 3); // this could be done in updatecontrol() maybe? for speed? And the following also
+  //int breath_next = (((breath_smooth.next(volume >> 7)) * breath_sens) >> 4) - ((breath_sens  - 255) << 3); // this could be done in updatecontrol() maybe? for speed? And the following also
+  int breath_next = breath_smooth.next((volume * breath_sens-((breath_sens-255)<<14)) >> 11);
   //if (breath_next == 0)
   if ((volume >> 7) == 0)
   {
