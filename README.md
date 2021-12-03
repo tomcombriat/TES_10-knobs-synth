@@ -1,5 +1,5 @@
 # TES - 10 knobs synth
-T. Combriat
+T. Combriat 
 
 10 knobs synths are simple synthesizers based on [Mozzi](https://github.com/sensorium/Mozzi) using STM32 blue pill with 10 knobs. Different versions are available:
 
