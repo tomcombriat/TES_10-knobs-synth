@@ -13,17 +13,6 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-$Comp
-L bluepill_breakouts:BluePill_STM32F103C U2
-U 1 1 5D04FCF5
-P 8050 4000
-F 0 "U2" V 8029 2572 50  0000 R CNN
-F 1 "BluePill_STM32F103C" V 8120 2572 50  0000 R CNN
-F 2 "BluePill_breakouts:BluePill_STM32F103C" H 8100 2400 50  0001 C CNN
-F 3 "www.rogerclark.net" H 8050 2500 50  0001 C CNN
-	1    8050 4000
-	0    1    1    0   
-$EndComp
 Wire Wire Line
 	8650 4900 8650 5000
 $Comp
@@ -154,7 +143,7 @@ L Connector:TestPoint TP7
 U 1 1 5D05C5F5
 P 8450 6400
 F 0 "TP7" V 8645 6474 50  0000 C CNN
-F 1 "out1" V 8554 6474 50  0000 C CNN
+F 1 "outTip" V 8554 6474 50  0000 C CNN
 F 2 "TestPoint:TestPoint_THTPad_2.5x2.5mm_Drill1.2mm" H 8650 6400 50  0001 C CNN
 F 3 "~" H 8650 6400 50  0001 C CNN
 	1    8450 6400
@@ -339,15 +328,11 @@ F 3 "" H 7400 6200 50  0001 C CNN
 	1    7400 6200
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	6950 3150 6850 3150
 NoConn ~ 7150 3150
 NoConn ~ 7350 3150
 NoConn ~ 8450 3150
 NoConn ~ 8550 3150
 NoConn ~ 8650 3150
-NoConn ~ 9950 3950
-NoConn ~ 9950 4050
 NoConn ~ 8250 4900
 NoConn ~ 8150 4900
 NoConn ~ 8050 4900
@@ -447,11 +432,7 @@ Wire Wire Line
 Wire Wire Line
 	9500 2900 9750 2900
 Wire Wire Line
-	9050 4900 9050 5200
-Wire Wire Line
 	8550 5200 8550 4900
-Text GLabel 10400 5650 2    50   Input ~ 0
-DAC_out
 Connection ~ 8500 2550
 Connection ~ 8750 2000
 Wire Wire Line
@@ -565,27 +546,8 @@ Wire Wire Line
 	6050 2700 6050 3000
 Text GLabel 6750 6200 1    50   Input ~ 0
 DAC_out
-$Comp
-L power:GND #PWR0109
-U 1 1 5F477E85
-P 2000 4500
-F 0 "#PWR0109" H 2000 4250 50  0001 C CNN
-F 1 "GND" V 2005 4372 50  0000 R CNN
-F 2 "" H 2000 4500 50  0001 C CNN
-F 3 "" H 2000 4500 50  0001 C CNN
-	1    2000 4500
-	0    -1   -1   0   
-$EndComp
-Wire Wire Line
-	1850 4500 1950 4500
-Wire Wire Line
-	1950 4400 1950 4500
-Connection ~ 1950 4500
-Wire Wire Line
-	1950 4500 2000 4500
 Wire Wire Line
 	6850 3100 6850 3150
-Connection ~ 6850 3150
 Wire Wire Line
 	7050 3150 7050 2800
 $Comp
@@ -700,26 +662,15 @@ F 3 "" H 2350 5000 50  0001 C CNN
 	1    2350 5000
 	1    0    0    -1  
 $EndComp
-$Comp
-L Amplifier_Operational:LM358 U4
-U 3 1 5F4501F5
-P 10150 2200
-F 0 "U4" H 10108 2246 50  0000 L CNN
-F 1 "LM358" H 10108 2155 50  0000 L CNN
-F 2 "Package_DIP:DIP-8_W7.62mm" H 10150 2200 50  0001 C CNN
-F 3 "http://www.ti.com/lit/ds/symlink/lm2904-n.pdf" H 10150 2200 50  0001 C CNN
-	3    10150 2200
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
-	10050 1900 9750 1900
+	10050 1900 9850 1900
 Wire Wire Line
 	9750 1900 9750 2900
 Connection ~ 9750 2900
 Wire Wire Line
 	9750 2900 10800 2900
 Wire Wire Line
-	8750 2550 10050 2550
+	8750 2550 9850 2550
 Wire Wire Line
 	10050 2550 10050 2500
 Connection ~ 8750 2550
@@ -753,19 +704,6 @@ F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 9038 6100 50  0001 C CNN
 F 3 "~" H 9000 6250 50  0001 C CNN
 	1    9000 6250
 	-1   0    0    1   
-$EndComp
-Wire Wire Line
-	1550 4100 1550 4500
-$Comp
-L Device:CP C1
-U 1 1 5F521F06
-P 1700 4500
-F 0 "C1" V 1955 4500 50  0000 C CNN
-F 1 "100u_chem" V 1864 4500 50  0000 C CNN
-F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 1738 4350 50  0001 C CNN
-F 3 "~" H 1700 4500 50  0001 C CNN
-	1    1700 4500
-	0    -1   -1   0   
 $EndComp
 Wire Wire Line
 	5200 2800 5700 2800
@@ -822,21 +760,6 @@ $EndComp
 Connection ~ 5700 2800
 Wire Wire Line
 	8750 4900 8750 5050
-Wire Wire Line
-	9050 4900 10800 4900
-Wire Wire Line
-	1550 4100 1950 4100
-$Comp
-L Device:C C2
-U 1 1 5FD3D8F7
-P 1950 4250
-F 0 "C2" H 2065 4296 50  0000 L CNN
-F 1 "0.1u ceram" H 2065 4205 50  0000 L CNN
-F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 1988 4100 50  0001 C CNN
-F 3 "~" H 1950 4250 50  0001 C CNN
-	1    1950 4250
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	5700 2800 6450 2800
 $Comp
@@ -920,9 +843,6 @@ Text GLabel 10700 3750 0    50   Input ~ 0
 batt+
 Wire Wire Line
 	10700 3750 10800 3750
-Connection ~ 10800 3750
-Wire Wire Line
-	10800 3750 10800 4900
 $Comp
 L Device:R R2
 U 1 1 5FEF2CE0
@@ -964,13 +884,6 @@ Wire Wire Line
 Text GLabel 4450 7550 0    50   Input ~ 0
 batt+
 NoConn ~ 5050 7000
-Connection ~ 1550 4500
-Wire Wire Line
-	1550 4500 1550 4550
-Text GLabel 1500 4550 0    50   Input ~ 0
-batt+
-Wire Wire Line
-	1550 4550 1500 4550
 $Comp
 L power:GND #PWR0114
 U 1 1 5FEB223F
@@ -1010,32 +923,21 @@ Wire Wire Line
 	5350 7250 5350 7450
 Connection ~ 5350 7450
 $Comp
-L TDA1387:TDA1387 U?
+L TDA1387:TDA1387 U1
 U 1 1 61BB0624
 P 4600 6900
-F 0 "U?" H 4600 7417 50  0000 C CNN
+F 0 "U1" H 4600 7417 50  0000 C CNN
 F 1 "TDA1387" H 4600 7326 50  0000 C CNN
-F 2 "Housings_SOIC:SOIC-8_3.9x4.9mm_Pitch1.27mm" H 4600 6900 50  0001 C CIN
+F 2 "Package_SO:SO-8_3.9x4.9mm_P1.27mm" H 4600 6900 50  0001 C CIN
 F 3 "" H 4600 6900 50  0001 C CNN
 	1    4600 6900
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:C C?
-U 1 1 61BB1755
-P 5200 6800
-F 0 "C?" V 4948 6800 50  0000 C CNN
-F 1 "1u" V 5039 6800 50  0000 C CNN
-F 2 "" H 5238 6650 50  0001 C CNN
-F 3 "~" H 5200 6800 50  0001 C CNN
-	1    5200 6800
-	0    1    1    0   
-$EndComp
-$Comp
-L power:GND #PWR?
+L power:GND #PWR0113
 U 1 1 61BB1F24
 P 5350 6800
-F 0 "#PWR?" H 5350 6550 50  0001 C CNN
+F 0 "#PWR0113" H 5350 6550 50  0001 C CNN
 F 1 "GND" V 5355 6672 50  0000 R CNN
 F 2 "" H 5350 6800 50  0001 C CNN
 F 3 "" H 5350 6800 50  0001 C CNN
@@ -1043,46 +945,29 @@ F 3 "" H 5350 6800 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L Amplifier_Operational:TL072 U?
+L Amplifier_Operational:TL072 U4
 U 1 1 61BBA785
 P 6150 6500
-F 0 "U?" H 6150 6867 50  0000 C CNN
+F 0 "U4" H 6150 6867 50  0000 C CNN
 F 1 "TL072" H 6150 6776 50  0000 C CNN
-F 2 "" H 6150 6500 50  0001 C CNN
+F 2 "Package_DIP:DIP-8_W7.62mm_Socket_LongPads" H 6150 6500 50  0001 C CNN
 F 3 "http://www.ti.com/lit/ds/symlink/tl071.pdf" H 6150 6500 50  0001 C CNN
 	1    6150 6500
 	1    0    0    -1  
-$EndComp
-$Comp
-L Device:R_POT RV?
-U 1 1 61BC18B8
-P 6000 6950
-F 0 "RV?" V 5885 6950 50  0000 C CNN
-F 1 "1k - gain" V 5794 6950 50  0000 C CNN
-F 2 "" H 6000 6950 50  0001 C CNN
-F 3 "~" H 6000 6950 50  0001 C CNN
-	1    6000 6950
-	0    -1   -1   0   
 $EndComp
 Wire Wire Line
 	6450 6500 6450 6650
 Wire Wire Line
 	6450 6950 6150 6950
 Wire Wire Line
-	6000 6800 5850 6800
-Wire Wire Line
-	5850 6800 5850 6600
-Wire Wire Line
-	5850 6950 5650 6950
-Wire Wire Line
 	5050 6650 5650 6650
 $Comp
-L Device:R_POT RV?
+L Device:R_POT RV9
 U 1 1 61BDCC93
 P 5550 6250
-F 0 "RV?" H 5481 6296 50  0000 R CNN
-F 1 "10k - bias" H 5481 6205 50  0000 R CNN
-F 2 "" H 5550 6250 50  0001 C CNN
+F 0 "RV9" H 5481 6296 50  0000 R CNN
+F 1 "1k - bias" H 5481 6205 50  0000 R CNN
+F 2 "Potentiometer_THT:Potentiometer_Bourns_3296W_Vertical" H 5550 6250 50  0001 C CNN
 F 3 "~" H 5550 6250 50  0001 C CNN
 	1    5550 6250
 	1    0    0    -1  
@@ -1092,12 +977,12 @@ Wire Wire Line
 Wire Wire Line
 	5850 6250 5850 6400
 $Comp
-L Device:C C?
+L Device:C C11
 U 1 1 61C18A4B
 P 5800 6100
-F 0 "C?" H 5915 6146 50  0000 L CNN
+F 0 "C11" H 5915 6146 50  0000 L CNN
 F 1 "10u" H 5915 6055 50  0000 L CNN
-F 2 "" H 5838 5950 50  0001 C CNN
+F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 5838 5950 50  0001 C CNN
 F 3 "~" H 5800 6100 50  0001 C CNN
 	1    5800 6100
 	1    0    0    -1  
@@ -1106,10 +991,10 @@ Connection ~ 5800 6250
 Wire Wire Line
 	5800 6250 5850 6250
 $Comp
-L power:GND #PWR?
+L power:GND #PWR0115
 U 1 1 61C1905A
 P 5800 5950
-F 0 "#PWR?" H 5800 5700 50  0001 C CNN
+F 0 "#PWR0115" H 5800 5700 50  0001 C CNN
 F 1 "GND" V 5805 5822 50  0000 R CNN
 F 2 "" H 5800 5950 50  0001 C CNN
 F 3 "" H 5800 5950 50  0001 C CNN
@@ -1117,21 +1002,10 @@ F 3 "" H 5800 5950 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L power:+3.3V #PWR?
-U 1 1 61C19A9D
-P 5550 6100
-F 0 "#PWR?" H 5550 5950 50  0001 C CNN
-F 1 "+3.3V" H 5565 6273 50  0000 C CNN
-F 2 "" H 5550 6100 50  0001 C CNN
-F 3 "" H 5550 6100 50  0001 C CNN
-	1    5550 6100
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR?
+L power:GND #PWR0117
 U 1 1 61C1A3BB
 P 5550 6400
-F 0 "#PWR?" H 5550 6150 50  0001 C CNN
+F 0 "#PWR0117" H 5550 6150 50  0001 C CNN
 F 1 "GND" H 5555 6227 50  0000 C CNN
 F 2 "" H 5550 6400 50  0001 C CNN
 F 3 "" H 5550 6400 50  0001 C CNN
@@ -1145,65 +1019,352 @@ Wire Wire Line
 Connection ~ 6450 6650
 Wire Wire Line
 	6450 6650 6450 6950
+Wire Wire Line
+	8450 6400 8550 6400
 $Comp
-L Device:C C?
-U 1 1 61C3C288
-P 5650 6800
-F 0 "C?" H 5765 6846 50  0000 L CNN
-F 1 "10u" H 5765 6755 50  0000 L CNN
-F 2 "" H 5688 6650 50  0001 C CNN
-F 3 "~" H 5650 6800 50  0001 C CNN
-	1    5650 6800
+L Amplifier_Operational:TL072 U4
+U 3 1 61BAEFFF
+P 10150 2200
+F 0 "U4" H 10108 2246 50  0000 L CNN
+F 1 "TL072" H 10108 2155 50  0000 L CNN
+F 2 "Package_DIP:DIP-8_W7.62mm_Socket_LongPads" H 10150 2200 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/tl071.pdf" H 10150 2200 50  0001 C CNN
+	3    10150 2200
 	1    0    0    -1  
 $EndComp
+Text GLabel 5550 6100 0    50   Input ~ 0
+batt+
+Wire Wire Line
+	9050 5350 9650 5350
+Wire Wire Line
+	5850 6600 5650 6600
+Wire Wire Line
+	5650 6600 5650 6650
 $Comp
-L Amplifier_Operational:TL072 U?
-U 2 1 61C3E2B2
+L Device:R R12
+U 1 1 61BE82A5
+P 6000 6950
+F 0 "R12" V 5793 6950 50  0000 C CNN
+F 1 "2.2k" V 5884 6950 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 5930 6950 50  0001 C CNN
+F 3 "~" H 6000 6950 50  0001 C CNN
+	1    6000 6950
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	5850 6600 5850 6950
+Connection ~ 5850 6600
+Wire Wire Line
+	10800 4700 9050 4700
+Wire Wire Line
+	9050 4700 9050 5200
+Wire Wire Line
+	10800 3750 10800 4700
+Connection ~ 10800 3750
+Wire Wire Line
+	6950 3150 6850 3150
+Wire Wire Line
+	4550 4300 4550 4650
+Wire Wire Line
+	5150 4550 5150 4300
+Wire Wire Line
+	5150 4750 5250 4750
+Text GLabel 5250 4750 2    50   Input ~ 0
+DAC_out
+Wire Wire Line
+	4550 4300 5150 4300
+$Comp
+L Device:R R9
+U 1 1 61CB73F8
+P 4400 4650
+F 0 "R9" V 4607 4650 50  0000 C CNN
+F 1 "10k" V 4516 4650 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 4330 4650 50  0001 C CNN
+F 3 "~" H 4400 4650 50  0001 C CNN
+	1    4400 4650
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:R R6
+U 1 1 61CB8400
+P 4100 4650
+F 0 "R6" V 3893 4650 50  0000 C CNN
+F 1 "10k" V 3984 4650 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 4030 4650 50  0001 C CNN
+F 3 "~" H 4100 4650 50  0001 C CNN
+	1    4100 4650
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:C C10
+U 1 1 61CEE671
+P 4250 4800
+F 0 "C10" H 4365 4846 50  0000 L CNN
+F 1 "1000p" H 4365 4755 50  0000 L CNN
+F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" H 4288 4650 50  0001 C CNN
+F 3 "~" H 4250 4800 50  0001 C CNN
+	1    4250 4800
+	1    0    0    -1  
+$EndComp
+Connection ~ 4250 4650
+Wire Wire Line
+	4250 4950 4250 5000
+Wire Wire Line
+	4250 4950 4250 4900
+Wire Wire Line
+	4250 4900 3650 4900
+Wire Wire Line
+	3650 4900 3650 5100
+Connection ~ 4250 4950
+Wire Wire Line
+	3950 4650 3950 5100
+Wire Wire Line
+	3950 5100 4250 5100
+Wire Wire Line
+	4250 5100 4250 5200
+$Comp
+L Device:C C12
+U 1 1 61D0EC53
+P 4400 5200
+F 0 "C12" V 4148 5200 50  0000 C CNN
+F 1 "680p" V 4239 5200 50  0000 C CNN
+F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" H 4438 5050 50  0001 C CNN
+F 3 "~" H 4400 5200 50  0001 C CNN
+	1    4400 5200
+	0    1    1    0   
+$EndComp
+$Comp
+L power:GND #PWR0116
+U 1 1 61D0F8AA
+P 4550 5200
+F 0 "#PWR0116" H 4550 4950 50  0001 C CNN
+F 1 "GND" H 4555 5027 50  0000 C CNN
+F 2 "" H 4550 5200 50  0001 C CNN
+F 3 "" H 4550 5200 50  0001 C CNN
+	1    4550 5200
+	1    0    0    -1  
+$EndComp
+Text Label 11000 5750 0    50   ~ 0
+filter_out
+Text Label 3650 5000 2    50   ~ 0
+filter_out
+Connection ~ 10050 1900
+Connection ~ 10050 2500
+$Comp
+L Device:CP C9
+U 1 1 61C49464
+P 5200 6800
+F 0 "C9" V 5455 6800 50  0000 C CNN
+F 1 "1u" V 5364 6800 50  0000 C CNN
+F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 5238 6650 50  0001 C CNN
+F 3 "~" H 5200 6800 50  0001 C CNN
+	1    5200 6800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:C C14
+U 1 1 61C6F88E
+P 10800 2200
+F 0 "C14" H 10915 2246 50  0000 L CNN
+F 1 "100n" H 10915 2155 50  0000 L CNN
+F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" H 10838 2050 50  0001 C CNN
+F 3 "~" H 10800 2200 50  0001 C CNN
+	1    10800 2200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	10800 1900 10800 2050
+Wire Wire Line
+	10800 2500 10800 2350
+$Comp
+L Device:C C13
+U 1 1 61C863DE
+P 9850 2200
+F 0 "C13" H 9965 2246 50  0000 L CNN
+F 1 "100n" H 9965 2155 50  0000 L CNN
+F 2 "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" H 9888 2050 50  0001 C CNN
+F 3 "~" H 9850 2200 50  0001 C CNN
+	1    9850 2200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9850 2050 9850 1900
+Connection ~ 9850 1900
+Wire Wire Line
+	9850 1900 9750 1900
+Wire Wire Line
+	9850 2350 9850 2550
+Connection ~ 9850 2550
+Wire Wire Line
+	9850 2550 10050 2550
+$Comp
+L Connector:TestPoint TP6
+U 1 1 61C5A3D9
+P 8150 6000
+F 0 "TP6" V 8345 6072 50  0000 C CNN
+F 1 "outRing" V 8254 6072 50  0000 C CNN
+F 2 "TestPoint:TestPoint_THTPad_2.5x2.5mm_Drill1.2mm" H 8350 6000 50  0001 C CNN
+F 3 "~" H 8350 6000 50  0001 C CNN
+	1    8150 6000
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Switch:SW_SPDT SW1
+U 1 1 61C5CC07
+P 8350 6000
+F 0 "SW1" H 8350 6285 50  0000 C CNN
+F 1 "SW_SPDT" H 8350 6194 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x03_P2.54mm_Vertical" H 8350 6000 50  0001 C CNN
+F 3 "~" H 8350 6000 50  0001 C CNN
+	1    8350 6000
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8550 6100 8550 6400
+Connection ~ 8550 6400
+Wire Wire Line
+	8550 6400 9000 6400
+NoConn ~ 8550 5900
+Wire Wire Line
+	10050 2500 10500 2500
+Wire Wire Line
+	10050 1900 10500 1900
+$Comp
+L Amplifier_Operational:TL072 U5
+U 3 1 61D085D2
+P 10600 2200
+F 0 "U5" H 10558 2246 50  0000 L CNN
+F 1 "TL072" H 10558 2155 50  0000 L CNN
+F 2 "Package_DIP:DIP-8_W7.62mm_Socket_LongPads" H 10600 2200 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/tl071.pdf" H 10600 2200 50  0001 C CNN
+	3    10600 2200
+	1    0    0    -1  
+$EndComp
+Connection ~ 10500 2500
+Wire Wire Line
+	10500 2500 10800 2500
+Connection ~ 10500 1900
+Wire Wire Line
+	10500 1900 10800 1900
+Wire Wire Line
+	11000 5750 10400 5750
+Wire Wire Line
+	10400 5750 10400 5650
+Wire Wire Line
+	9050 5650 9050 5800
+Wire Wire Line
+	9050 5350 9050 5650
+Connection ~ 9050 5650
+$Comp
+L Amplifier_Operational:TL072 U5
+U 2 1 61D19570
 P 9350 5650
-F 0 "U?" H 9350 5283 50  0000 C CNN
-F 1 "2.7k" H 9350 5374 50  0000 C CNN
-F 2 "" H 9350 5650 50  0001 C CNN
+F 0 "U5" H 9350 5283 50  0000 C CNN
+F 1 "TL072" H 9350 5374 50  0000 C CNN
+F 2 "Package_DIP:DIP-8_W7.62mm_Socket_LongPads" H 9350 5650 50  0001 C CNN
 F 3 "http://www.ti.com/lit/ds/symlink/tl071.pdf" H 9350 5650 50  0001 C CNN
 	2    9350 5650
 	-1   0    0    1   
 $EndComp
-Connection ~ 9050 5650
-Wire Wire Line
-	9050 5650 9050 5800
+Connection ~ 4250 5200
 $Comp
-L Device:R R?
-U 1 1 61C41A91
-P 9350 5350
-F 0 "R?" V 9143 5350 50  0000 C CNN
-F 1 "R" V 9234 5350 50  0000 C CNN
-F 2 "" V 9280 5350 50  0001 C CNN
-F 3 "~" H 9350 5350 50  0001 C CNN
-	1    9350 5350
-	0    1    1    0   
+L Amplifier_Operational:TL072 U5
+U 1 1 61C385B5
+P 3950 5100
+F 0 "U5" H 3950 4733 50  0000 C CNN
+F 1 "TL072" H 3950 4824 50  0000 C CNN
+F 2 "Package_DIP:DIP-8_W7.62mm_Socket_LongPads" H 3950 5100 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/tl071.pdf" H 3950 5100 50  0001 C CNN
+	1    3950 5100
+	-1   0    0    1   
+$EndComp
+Connection ~ 4550 4650
+$Comp
+L Amplifier_Operational:TL072 U4
+U 2 1 61C36817
+P 4850 4650
+F 0 "U4" H 4850 4283 50  0000 C CNN
+F 1 "TL072" H 4850 4374 50  0000 C CNN
+F 2 "Package_DIP:DIP-8_W7.62mm_Socket_LongPads" H 4850 4650 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/tl071.pdf" H 4850 4650 50  0001 C CNN
+	2    4850 4650
+	-1   0    0    1   
 $EndComp
 $Comp
-L Device:C C?
-U 1 1 61C42250
-P 9350 5150
-F 0 "C?" V 9098 5150 50  0000 C CNN
-F 1 "1.5nF" V 9189 5150 50  0000 C CNN
-F 2 "" H 9388 5000 50  0001 C CNN
-F 3 "~" H 9350 5150 50  0001 C CNN
-	1    9350 5150
+L bluepill_breakouts:BluePill_STM32F103C_breadboard_friendly U2
+U 1 1 61C9AC09
+P 8050 4000
+F 0 "U2" V 8029 5628 50  0000 L CNN
+F 1 "BluePill_STM32F103C_breadboard_friendly" V 8120 5628 50  0000 L CNN
+F 2 "BluePill:BluePill_STM32F103C_breadboard_friendly" H 8100 2400 50  0001 C CNN
+F 3 "www.rogerclark.net" H 8050 2500 50  0001 C CNN
+	1    8050 4000
 	0    1    1    0   
 $EndComp
+Connection ~ 6850 3150
+$Comp
+L Mechanical:MountingHole H1
+U 1 1 61CEE85C
+P 1350 3250
+F 0 "H1" H 1450 3296 50  0000 L CNN
+F 1 "MountingHole" H 1450 3205 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3_ISO7380_Pad" H 1350 3250 50  0001 C CNN
+F 3 "~" H 1350 3250 50  0001 C CNN
+	1    1350 3250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H3
+U 1 1 61CF0014
+P 1850 3200
+F 0 "H3" H 1950 3246 50  0000 L CNN
+F 1 "MountingHole" H 1950 3155 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3_ISO7380_Pad" H 1850 3200 50  0001 C CNN
+F 3 "~" H 1850 3200 50  0001 C CNN
+	1    1850 3200
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H2
+U 1 1 61CF0955
+P 1400 3600
+F 0 "H2" H 1500 3646 50  0000 L CNN
+F 1 "MountingHole" H 1500 3555 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3_ISO7380_Pad" H 1400 3600 50  0001 C CNN
+F 3 "~" H 1400 3600 50  0001 C CNN
+	1    1400 3600
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H4
+U 1 1 61CF12B2
+P 1950 3600
+F 0 "H4" H 2050 3646 50  0000 L CNN
+F 1 "MountingHole" H 2050 3555 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3_ISO7380_Pad" H 1950 3600 50  0001 C CNN
+F 3 "~" H 1950 3600 50  0001 C CNN
+	1    1950 3600
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:CP C1
+U 1 1 61CBC063
+P 11100 2200
+F 0 "C1" H 11218 2246 50  0000 L CNN
+F 1 "100u" H 11218 2155 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm" H 11138 2050 50  0001 C CNN
+F 3 "~" H 11100 2200 50  0001 C CNN
+	1    11100 2200
+	1    0    0    -1  
+$EndComp
 Wire Wire Line
-	9650 5350 9500 5350
+	10800 1900 11100 1900
 Wire Wire Line
-	9500 5150 9500 5350
-Connection ~ 9500 5350
+	11100 1900 11100 2050
+Connection ~ 10800 1900
 Wire Wire Line
-	9200 5150 9200 5350
+	11100 2350 11100 2500
 Wire Wire Line
-	9050 5350 9050 5650
-Wire Wire Line
-	9200 5350 9050 5350
-Connection ~ 9200 5350
-Wire Wire Line
-	8450 6400 9000 6400
+	11100 2500 10800 2500
+Connection ~ 10800 2500
 $EndSCHEMATC

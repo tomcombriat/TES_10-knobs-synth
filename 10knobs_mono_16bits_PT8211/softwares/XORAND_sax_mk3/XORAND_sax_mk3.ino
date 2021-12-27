@@ -53,7 +53,7 @@ ADSR <AUDIO_RATE, AUDIO_RATE> envelope[POLYPHONY];
 
 LowPassFilter16 lpf;
 //LowPassFilter lpf;
-Smooth <unsigned int> cutoff_smooth(0.999f);  // 0.999 -> 15ms
+Smooth <unsigned int> cutoff_smooth(0.995f);  // 0.999 -> 15ms  // a bit sluggish?
                                               // 0.995 -> 7ms
 Smooth <int> breath_smooth(0.98f);  // if updated at AUDIO_RATE:
                                     // 0.99 -> 15ms maximal raise time
