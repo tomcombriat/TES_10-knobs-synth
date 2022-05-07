@@ -5,13 +5,7 @@
   A 10k synth flavor to be used with an EWI. Supports polyphony (for chords) and breath control over volume or/and filter.
 
 
-   To change from mozzi original:
-       -   unsigned long update_step_counter;
-       -   unsigned long update_steps;
-       -   unsigned long num_update_steps;   in ADSR.h (L51)
-       -   unsigned long convertMsecToControlUpdateSteps(unsigned int msec){
-           return (uint32_t) (((uint32_t)msec*CONTROL_UPDATE_RATE)>>10); // approximate /1000 with shift
-  Or use the TES-branch of tomcombriat/Mozzi.
+  Use the TES-branch of tomcombriat/Mozzi for MetaOsc.
 
 
   Mozzi config should be set to use an external audio
@@ -41,6 +35,7 @@
 
 
 #define CONTROL_RATE 2048 // Hz, powers of 2 are most reliable
+//#define CONTROL_RATE 4096 // Hz, powers of 2 are most reliable
 
 #define LED PA8
 
@@ -49,7 +44,7 @@ Oscil<COS512_NUM_CELLS, AUDIO_RATE> aSin[POLYPHONY] = Oscil<COS512_NUM_CELLS, AU
 Oscil<COS2048_NUM_CELLS, AUDIO_RATE> LFO[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
 
 
-ADSR <AUDIO_RATE, AUDIO_RATE> envelope[POLYPHONY];
+ADSR <AUDIO_RATE, AUDIO_RATE, unsigned long> envelope[POLYPHONY];
 
 LowPassFilter16 lpf;
 //LowPassFilter lpf;
@@ -140,10 +135,9 @@ void setup() {
   delay(100);
   mySPI.beginTransaction(SPISettings(2000000000, MSBFIRST, SPI_MODE0)); //MSB first, according to the DAC spec
 
-
   pinMode(WS_pin, OUTPUT);
 
-  pinMode(PB1, INPUT);
+  pinMode(PB1, INPUT_ANALOG);
   pinMode(PB0, INPUT);
   pinMode(PA1, INPUT);
   pinMode(PA2, INPUT);
@@ -157,7 +151,7 @@ void setup() {
   {
 
     envelope[i].setADLevels(128, 128);
-    envelope[i].setTimes(1, 1, 65000, 10);
+    envelope[i].setTimes(1, 1, 6500000, 10);
     aSquare[i].setOscils(&aSq75[i], &aSq81[i], &aSq88[i], &aSq96[i], &aSq106[i], &aSq118[i], &aSq134[i], &aSq154[i], &aSq182[i], &aSq221[i], &aSq282[i], &aSq356[i], &aSq431[i], &aSq546[i], &aSq630[i], &aSq744[i], &aSq910[i], &aSq1170[i], &aSq1638[i], &aSq2730[i], &aSq8192[i]);
     aSquare[i].setCutoffFreqs(75 * 2, 81 * 2, 88 * 2, 96 * 2, 106 * 2, 118 * 2, 134 * 2, 154 * 2, 182 * 2, 221 * 2, 282 * 2, 356 * 2, 431 * 2, 546 * 2, 630 * 2, 744 * 2, 910 * 2, 1170 * 2, 1638 * 2, 2730 * 2, 8192 * 2);
 
@@ -166,6 +160,8 @@ void setup() {
     aTri[i].setOscils(&aTri106[i], &aTri118[i], &aTri134[i], &aTri154[i], &aTri182[i], &aTri221[i], &aTri282[i], &aTri356[i], &aTri431[i], &aTri546[i], &aTri630[i], &aTri744[i], &aTri910[i], &aTri1170[i], &aTri1638[i], &aTri2730[i], &aTri8192[i]);
     aTri[i].setCutoffFreqs( 106 * 2, 118 * 2, 134 * 2, 154 * 2, 182 * 2, 221 * 2, 282 * 2, 356 * 2, 431 * 2, 546 * 2, 630 * 2, 744 * 2, 910 * 2, 1170 * 2, 1638 * 2, 2730 * 2, 8192 * 2);
     aSaw[i].setPhase(512 >> 2 );
+    aSin[i].setPhase(512 >> 2 );  // test
+    
   }
 
 
@@ -179,7 +175,7 @@ void setup() {
   MIDI.setHandlePitchBend(HandlePitchBend);
   MIDI.setHandleAfterTouchChannel(HandleAfterTouchChannel);
 
-  Serial.begin(115200);
+  //Serial.begin(115200);
 
 
   MIDI.begin(MIDI_CHANNEL_OMNI);
@@ -227,15 +223,13 @@ void audioOutput(const AudioOutput f) // f is a structure containing both channe
 void updateControl() {
 
   while (MIDI.read());
-  //set_freq(0);
-  //Serial.println(volume>>7);
 
   toggle++;
 
   switch (toggle)
   {
     case 1:
-      mix1 =  mozziAnalogRead(PB0) >> 4;
+      mix1 =  mozziAnalogRead(PB0) >> 4;  // very steppy, but not mix2, WHY????      
       break;
     case 2:
       mix2 =  mozziAnalogRead(PA6) >> 4;
@@ -277,11 +271,6 @@ AudioOutput_t updateAudio() {
 
 
       cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff<<9));  // >>8
-      //cutoff = (((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff<<9));  // >>8
-      //Serial.print(cutoff);
-      //Serial.print(" ");
-      //Serial.println(((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff<<9));
-      //Serial.println(cutoff);
       if (cutoff > 65535) cutoff = 65535;
       if (cutoff != prev_cutoff || resonance != prev_resonance)
       {
@@ -367,4 +356,3 @@ AudioOutput_t updateAudio() {
   return MonoOutput::fromNBit(24, sample).clip();
 
 }
-
