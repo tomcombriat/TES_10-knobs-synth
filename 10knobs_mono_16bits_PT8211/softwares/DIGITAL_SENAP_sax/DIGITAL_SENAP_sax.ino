@@ -188,6 +188,10 @@ void setup() {
   MIDI.turnThruOff (); //for speed
   startMozzi(CONTROL_RATE);
   digitalWrite(LED, LOW);
+    digitalWrite(LED, HIGH);
+  delay(100);
+    digitalWrite(LED, LOW);
+  
 
 }
 
