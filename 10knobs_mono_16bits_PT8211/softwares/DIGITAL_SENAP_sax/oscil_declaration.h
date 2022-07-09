@@ -1,4 +1,4 @@
-#ifndef _osc_dec_
+/*#ifndef _osc_dec_
 #define _osc_dec_
 
 
@@ -149,4 +149,4 @@ MetaOscil<TRI_MAX_106_AT_16384_512_NUM_CELLS, AUDIO_RATE, 17> aTri[POLYPHONY];
 
 
 
-#endif
+#endif*/
