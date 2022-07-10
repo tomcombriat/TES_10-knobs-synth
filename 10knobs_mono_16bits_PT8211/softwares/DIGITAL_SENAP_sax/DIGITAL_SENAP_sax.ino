@@ -40,7 +40,7 @@
 
 #define LED PA8
 
-#define POLYPHONY 8
+#define POLYPHONY 16
 
 
 Oscil<COS2048_NUM_CELLS, AUDIO_RATE> aCarrier[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
@@ -105,6 +105,7 @@ void set_freq(byte i, bool reset_phase = false)
 
 void compute_fm_param(byte i)
 {
+  
   mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
   aMod[i].setFreq_Q16n16(mod_freq[i]);
 }
@@ -225,7 +226,7 @@ void updateControl() {
   switch (toggle)
   {
     case 1:
-      mod_to_carrier_ratio = mozziAnalogRead(PA6) >> 2 ;
+      mod_to_carrier_ratio = mozziAnalogRead(PA6) >> 2;  //10bits: 2integers, 8 fractionnal (up to 4)
       for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
       break;
     case 2:
