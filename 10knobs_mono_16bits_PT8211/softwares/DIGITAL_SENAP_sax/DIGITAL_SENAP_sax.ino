@@ -49,10 +49,8 @@ Oscil<COS2048_NUM_CELLS, AUDIO_RATE> aMod[POLYPHONY] = Oscil<COS2048_NUM_CELLS, 
 
 ADSR <AUDIO_RATE, AUDIO_RATE, unsigned long> envelope[POLYPHONY];
 
-//LowPassFilter16 lpf;
-//LowPassFilter lpf;
-//Smooth <unsigned int> cutoff_smooth(0.995f);  // 0.999 -> 15ms  // a bit sluggish?
-// 0.995 -> 7ms
+LowPassFilter16 lpf;
+Smooth <unsigned int> cutoff_smooth(0.995f);  // 0.999 -> 15ms  // a bit sluggish?// 0.995 -> 7ms
 Smooth <int> breath_smooth(0.98f);  // if updated at AUDIO_RATE:
 // 0.99 -> 15ms maximal raise time
 // 0.98 -> 8ms
@@ -61,7 +59,7 @@ Smooth <int> breath_smooth(0.98f);  // if updated at AUDIO_RATE:
 
 byte notes[POLYPHONY] = {0};
 
-int  pitchbend = 0, pitchbend_amp = 2, resonance = 0, breath_sens = 0, volume = 0;
+int  pitchbend = 0, pitchbend_amp = 2, resonance = 0, breath_sens = 0, volume = 0, breath_on_cutoff = 0, prev_resonance = 0;
 byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, prev_MSB_volume = 0;
 bool sustain = false;
 bool osc_is_on[POLYPHONY] = {false};
@@ -73,12 +71,12 @@ int toggle = 0;
 Q16n16 carrier_freq[POLYPHONY];
 Q16n16 mod_freq[POLYPHONY];
 
-Q8n8 mod_index;
-Q16n16 deviation[POLYPHONY];
+
+Q16n16 deviation;
 Q8n8 mod_to_carrier_ratio;
 
-Q8n8 mod_index_rm;
-Q16n16 deviation_rm[POLYPHONY];
+
+Q16n16 deviation_rm;
 
 
 
@@ -93,23 +91,25 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial3, MIDI);
 
 
 
+
 void set_freq(byte i, bool reset_phase = false)
 {
-
   osc_is_on[i] = true;
   Q16n16 freq = Q16n16_mtof(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp);
   freq = freq >> 1; // For stable FM, next need to be called, leading to twice the freq as a result
 
   carrier_freq[i] = freq;
-  mod_freq[i] = ((freq >> 8) * mod_to_carrier_ratio);
-  deviation[i] = ((mod_freq[i] >> 16) * mod_index);
-  deviation_rm[i] = ((freq >> 16) * mod_index_rm);
-  aMod[i].setFreq_Q16n16(mod_freq[i]);
   aCarrier[i].setFreq_Q16n16(freq);
-
-
-
+  compute_fm_param(i);
 }
+
+void compute_fm_param(byte i)
+{
+  mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
+  aMod[i].setFreq_Q16n16(mod_freq[i]);
+}
+
+
 
 
 int three_values_knob(int val, int i)
@@ -142,7 +142,6 @@ int three_values_knob(int val, int i)
 void setup() {
   //Serial.begin(115200);
   pinMode(LED, OUTPUT);
-  digitalWrite(LED, HIGH);
   mySPI.begin();
   delay(100);
   mySPI.beginTransaction(SPISettings(2000000000, MSBFIRST, SPI_MODE0)); //MSB first, according to the DAC spec
@@ -175,21 +174,22 @@ void setup() {
   //  MIDI.setHandleAfterTouchChannel(HandleAfterTouchChannel);
 
 
-
-
   MIDI.begin(MIDI_CHANNEL_OMNI);
+  MIDI.turnThruOff (); // hardwired
+  digitalWrite(LED, HIGH);
+  delay(100);
+  digitalWrite(LED, LOW);
+  delay(100);
+  digitalWrite(LED, HIGH);
   delay(100);
   digitalWrite(LED, LOW);
   delay(100);
   digitalWrite(LED, HIGH);
   delay(100);
 
-  MIDI.turnThruOff (); // hardwired
   startMozzi(CONTROL_RATE);
   digitalWrite(LED, LOW);
-  digitalWrite(LED, HIGH);
-  delay(100);
-  digitalWrite(LED, LOW);
+
 
 
 }
@@ -209,15 +209,9 @@ void loop() {
 
 void audioOutput(const AudioOutput f) // f is a structure containing both channels
 {
-  //Serial.println(f.l()>>8);
-  // analogWrite(LED, f.l()>>8);
   digitalWrite(WS_pin, LOW);  //select Right channel
   mySPI.transfer16(f.l());
-
-
   digitalWrite(WS_pin, HIGH);  // select Left channel
-  //  mySPI.transfer16(f.l());
-  //digitalWrite(LED, HIGH);
 }
 
 
@@ -232,12 +226,15 @@ void updateControl() {
   {
     case 1:
       mod_to_carrier_ratio = mozziAnalogRead(PA6) >> 2 ;
+      for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
       break;
     case 2:
-      mod_index = mozziAnalogRead(PB0) << 2 ;
+      deviation = mozziAnalogRead(PB0) << 10 ;
+      for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
       break;
     case 3:
-      mod_index_rm = mozziAnalogRead(PA5) ;
+      deviation_rm = mozziAnalogRead(PA5) << 4 ;
+      for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
       break;
     case 4:
 
@@ -249,33 +246,37 @@ void updateControl() {
       chord_attack = mozziAnalogRead(PB1) >> 0 ;
       break;
     case 7:
-
+      breath_on_cutoff = (mozziAnalogRead(PA4) >> 4);
       break;
     case 8:
-
+      resonance  = mozziAnalogRead(PA2);
       break;
-
     case 9:
       breath_sens = mozziAnalogRead(PA1) >> 4;
       toggle = 0;
       break;
   }
 
-  for (byte i = 0; i < POLYPHONY; i++)
-  {
-    mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
-    deviation[i] = ((mod_freq[i] >> 16) * mod_index);
-    deviation_rm[i] = ((carrier_freq[i] >> 16) * mod_index_rm);
-    aMod[i].setFreq_Q16n16(mod_freq[i]);
-  }
+
+
 }
 
 AudioOutput_t updateAudio() {
 
-  int sample = 0;
+  long sample = 0;
+
+  cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff << 9)); // >>8
+  if (cutoff > 65535) cutoff = 65535;
+  if (cutoff != prev_cutoff || resonance != prev_resonance)
+  {
+    lpf.setCutoffFreqAndResonance(cutoff, resonance << 4);
+    prev_cutoff = cutoff;
+    prev_resonance = resonance;
+  }
 
   int breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);
-  //if (breath_next == 0)
+
+
   if ((volume >> 7) == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)
@@ -289,31 +290,27 @@ AudioOutput_t updateAudio() {
 
   for (byte i = 0; i < POLYPHONY; i++)
   {
-
     envelope[i].update();
     int env_next = envelope[i].next();  // for enveloppe to roll even if it is not playing
     if (envelope[i].playing() && osc_is_on[i])
     {
       long partial_sample = 0;
 
-      Q15n16 modulation_rm = deviation_rm[i] * aCarrier[i].next() >> 8 ;
-      Q15n16 modulation = deviation[i] * aMod[i].phMod(modulation_rm) >> 8 ;
-      partial_sample = aCarrier[i].phMod(modulation);
+      Q15n16 modulation_rm = deviation_rm * aCarrier[i].next() >> 8 ;
+      Q15n16 modulation = deviation * aMod[i].phMod(modulation_rm) >> 8 ;
+      partial_sample = aCarrier[i].phMod(modulation); // 8bits
 
-
-      //sample += (partial_sample * env_next) >> 1;
-      sample += partial_sample;
-
+      sample += (partial_sample * env_next);  // 15bits
     }
   }
 
-  //sample = (sample * breath_next) >> 5 ;
+  sample = (sample * breath_next) ; //26bits
+
+
+  sample = lpf.next(sample >> 10);
 
 
 
-
-
-
-  return MonoOutput::from16Bit(sample << 6).clip();
+  return MonoOutput::fromNBit(16, sample).clip();
 
 }
