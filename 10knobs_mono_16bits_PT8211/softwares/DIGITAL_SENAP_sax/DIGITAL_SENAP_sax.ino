@@ -32,6 +32,7 @@
 #include <Portamento.h>
 #include "midi_handles.h"
 #include "oscil_declaration.h"
+#include "dual_type_pot.h"
 #include <tables/cos2048_int8.h>
 
 
@@ -227,7 +228,8 @@ void updateControl() {
   switch (toggle)
   {
     case 1:
-      mod_to_carrier_ratio = mozziAnalogRead(PA6) >> 2;  //10bits: 2integers, 8 fractionnal (up to 4)
+      //mod_to_carrier_ratio = mozziAnalogRead(PA6) >> 2;  //10bits: 2integers, 8 fractionnal (up to 4)
+      mod_to_carrier_ratio = dual_type_pot(mozziAnalogRead(PA6));
       for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
       break;
     case 2:
