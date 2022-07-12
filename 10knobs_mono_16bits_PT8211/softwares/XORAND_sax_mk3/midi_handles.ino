@@ -1,4 +1,4 @@
-#include "midi_handles.h"
+ #include "midi_handles.h"
 #include "oscil_declaration.h"
 
 
@@ -210,5 +210,3 @@ void HandleAfterTouchChannel(byte channel, byte after)
 {
   aftertouch = after;
 }
-
-

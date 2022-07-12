@@ -15,7 +15,7 @@
 */
 
 
-
+#define RINGING_CHORDS
 #include <MIDI.h>
 #include <MozziGuts.h>
 #include <Oscil.h>
@@ -59,12 +59,13 @@ Smooth <int> breath_smooth(0.98f);  // if updated at AUDIO_RATE:
 
 byte notes[POLYPHONY] = {0};
 
-int  pitchbend = 0, pitchbend_amp = 2, resonance = 0, breath_sens = 0, volume = 0, breath_on_cutoff = 0, prev_resonance = 0;
+int  pitchbend = 0, pitchbend_amp = 2, resonance = 0, breath_sens = 0, volume = 0, breath_on_cutoff = 0, prev_resonance = 0, toggle = 0;
 byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, prev_MSB_volume = 0;
 bool sustain = false;
 bool osc_is_on[POLYPHONY] = {false};
+int breath_at_note_off[POLYPHONY] = {0}, breath_next = 0;
 unsigned int chord_attack = 1, chord_release = 1, cutoff = 0, prev_cutoff = 0, midi_cutoff = 0;
-int toggle = 0;
+
 
 
 
@@ -105,7 +106,7 @@ void set_freq(byte i, bool reset_phase = false)
 
 void compute_fm_param(byte i)
 {
-  
+
   mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
   aMod[i].setFreq_Q16n16(mod_freq[i]);
 }
@@ -275,7 +276,7 @@ AudioOutput_t updateAudio() {
     prev_resonance = resonance;
   }
 
-  int breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);
+  breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);
 
 
   if ((volume >> 7) == 0)
@@ -301,12 +302,17 @@ AudioOutput_t updateAudio() {
       Q15n16 modulation = deviation * aMod[i].phMod(modulation_rm) >> 8 ;
       partial_sample = aCarrier[i].phMod(modulation); // 8bits
 
+#ifdef RINGING_CHORDS
+      if (breath_at_note_off[i] != 0 && breath_at_note_off[i]<breath_next)  partial_sample *= breath_at_note_off[i];
+ 
+      else partial_sample *= breath_next;
+#endif
       sample += (partial_sample * env_next);  // 15bits
     }
   }
-
+#ifndef RINGING_CHORDS
   sample = (sample * breath_next) ; //26bits
-
+#endif
 
   sample = lpf.next(sample >> 10);
 
