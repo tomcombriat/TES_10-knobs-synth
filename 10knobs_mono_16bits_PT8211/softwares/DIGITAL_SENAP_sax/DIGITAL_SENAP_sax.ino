@@ -52,6 +52,7 @@ ADSR <AUDIO_RATE, AUDIO_RATE, unsigned long> envelope[POLYPHONY];
 
 LowPassFilter16 lpf;
 Smooth <unsigned int> cutoff_smooth(0.995f);  // 0.999 -> 15ms  // a bit sluggish?// 0.995 -> 7ms
+Smooth <unsigned int> rm_smooth(0.995f);  // 0.999 -> 15ms  // a bit sluggish?// 0.995 -> 7ms
 Smooth <int> breath_smooth(0.98f);  // if updated at AUDIO_RATE:
 // 0.99 -> 15ms maximal raise time
 // 0.98 -> 8ms
@@ -60,12 +61,14 @@ Smooth <int> breath_smooth(0.98f);  // if updated at AUDIO_RATE:
 
 byte notes[POLYPHONY] = {0};
 
-int  pitchbend = 0, pitchbend_amp = 2, resonance = 0, breath_sens = 0, volume = 0, breath_on_cutoff = 0, prev_resonance = 0, toggle = 0;
+int  pitchbend = 0, pitchbend_amp = 2, resonance = 0, breath_sens = 0, volume = 0, breath_on_cutoff = 0, breath_on_rm = 0, prev_resonance = 0, toggle = 0;
 byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, prev_MSB_volume = 0;
 bool sustain = false;
 bool osc_is_on[POLYPHONY] = {false};
 int breath_at_note_off[POLYPHONY] = {0}, breath_next = 0;
 unsigned int chord_attack = 1, chord_release = 1, cutoff = 0, prev_cutoff = 0, midi_cutoff = 0;
+uint32_t deviation_rm;
+
 
 
 
@@ -79,7 +82,7 @@ Q16n16 deviation;
 Q8n8 mod_to_carrier_ratio;
 
 
-Q16n16 deviation_rm;
+Q16n16 deviation_rm_pot;
 
 
 
@@ -240,11 +243,11 @@ void updateControl() {
       //for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
       break;
     case 3:
-      deviation_rm = mozziAnalogRead(PA5) << 4 ;
+      deviation_rm_pot = mozziAnalogRead(PA5) << 4 ;
       //for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
       break;
     case 4:
-
+      breath_on_rm = (mozziAnalogRead(PA3) >> 4);
       break;
     case 5:
       chord_release = mozziAnalogRead(PA7) >> 0 ;
@@ -280,10 +283,11 @@ AudioOutput_t updateAudio() {
     prev_cutoff = cutoff;
     prev_resonance = resonance;
   }
-
   breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);
 
 
+//deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot);  
+deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot<<2);  
   if ((volume >> 7) == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)
