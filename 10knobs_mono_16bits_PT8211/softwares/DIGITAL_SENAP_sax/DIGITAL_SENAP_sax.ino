@@ -15,7 +15,7 @@
 */
 
 
-#define RINGING_CHORDS
+#define RINGING_CHORDS // chords do not follow breath when in the decaying phase if the breath is higher than their noteOff velocity
 #include <MIDI.h>
 #include <MozziGuts.h>
 #include <Oscil.h>
@@ -70,6 +70,7 @@ unsigned int chord_attack = 1, chord_release = 1, cutoff = 0, prev_cutoff = 0, m
 
 
 
+
 Q16n16 carrier_freq[POLYPHONY];
 Q16n16 mod_freq[POLYPHONY];
 
@@ -111,6 +112,9 @@ void compute_fm_param(byte i)
   mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
   aMod[i].setFreq_Q16n16(mod_freq[i]);
 }
+
+
+
 
 
 
@@ -164,7 +168,6 @@ void setup() {
 
   for (byte i = 0; i < POLYPHONY; i++)
   {
-
     envelope[i].setADLevels(128, 128);
     envelope[i].setTimes(1, 1, 6500000, 10);
   }
@@ -234,11 +237,11 @@ void updateControl() {
       break;
     case 2:
       deviation = mozziAnalogRead(PB0) << 10 ;
-      for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
+      //for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
       break;
     case 3:
       deviation_rm = mozziAnalogRead(PA5) << 4 ;
-      for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
+      //for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
       break;
     case 4:
 
@@ -247,7 +250,7 @@ void updateControl() {
       chord_release = mozziAnalogRead(PA7) >> 0 ;
       break;
     case 6:
-      chord_attack = mozziAnalogRead(PB1) >> 0 ;
+      chord_attack = mozziAnalogRead(PB1) >> 0;
       break;
     case 7:
       breath_on_cutoff = (mozziAnalogRead(PA4) >> 4);
@@ -305,8 +308,8 @@ AudioOutput_t updateAudio() {
       partial_sample = aCarrier[i].phMod(modulation); // 8bits
 
 #ifdef RINGING_CHORDS
-      if (breath_at_note_off[i] != 0 && breath_at_note_off[i]<breath_next)  partial_sample *= breath_at_note_off[i];
- 
+      if (breath_at_note_off[i] != 0 && breath_at_note_off[i] < breath_next)  partial_sample *= breath_at_note_off[i];
+
       else partial_sample *= breath_next;
 #endif
       sample += (partial_sample * env_next);  // 15bits
