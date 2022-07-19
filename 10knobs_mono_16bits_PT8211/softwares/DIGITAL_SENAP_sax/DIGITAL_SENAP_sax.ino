@@ -33,15 +33,17 @@
 #include "midi_handles.h"
 #include "oscil_declaration.h"
 #include "dual_type_pot.h"
+#include "computeMaxDeviation.h"
 #include <tables/cos2048_int8.h>
 
 
 #define CONTROL_RATE 2048 // Hz, powers of 2 are most reliable
-//#define CONTROL_RATE 4096 // Hz, powers of 2 are most reliable
+//#define CONTROL_RATE 512
+
 
 #define LED PA8
 
-#define POLYPHONY 16
+#define POLYPHONY 12
 
 
 Oscil<COS2048_NUM_CELLS, AUDIO_RATE> aCarrier[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
@@ -57,9 +59,10 @@ Smooth <int> breath_smooth(0.98f);  // if updated at AUDIO_RATE:
 // 0.99 -> 15ms maximal raise time
 // 0.98 -> 8ms
 // 0.9999 -> 1.3s (!!!!)
-//Portamento<CONTROL_RATE> porta;
 
-byte notes[POLYPHONY] = {0};
+Smooth <Q16n16> deviation_smooth[POLYPHONY] = {Smooth <Q16n16>(0.001f)};
+
+byte notes[POLYPHONY] = {100};
 
 int  pitchbend = 0, pitchbend_amp = 2, resonance = 0, breath_sens = 0, volume = 0, breath_on_cutoff = 0, breath_on_rm = 0, prev_resonance = 0, toggle = 0;
 byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, prev_MSB_volume = 0;
@@ -72,14 +75,15 @@ uint32_t deviation_rm;
 
 
 
-
+Q16n16 maxDeviation[8][128];
 
 Q16n16 carrier_freq[POLYPHONY];
-Q16n16 mod_freq[POLYPHONY];
+Q24n8 mod_freq[POLYPHONY];
 
 
-Q16n16 deviation;
-Q8n8 mod_to_carrier_ratio;
+Q16n16 deviation_pot;
+Q16n16 deviation[POLYPHONY], deviation_sm[POLYPHONY];
+Q8n8 mod_to_carrier_ratio, mod_to_carrier_ratio_old;
 
 
 Q16n16 deviation_rm_pot;
@@ -101,7 +105,8 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial3, MIDI);
 void set_freq(byte i, bool reset_phase = false)
 {
   osc_is_on[i] = true;
-  Q16n16 freq = Q16n16_mtof(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp);
+  Q16n16 current_note = Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp;
+  Q16n16 freq = Q16n16_mtof(current_note);
   freq = freq >> 1; // For stable FM, next need to be called, leading to twice the freq as a result
 
   carrier_freq[i] = freq;
@@ -109,12 +114,26 @@ void set_freq(byte i, bool reset_phase = false)
   compute_fm_param(i);
 }
 
-void compute_fm_param(byte i)
+inline void compute_fm_param(byte i)
 {
+/*  mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
 
-  mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
-  aMod[i].setFreq_Q16n16(mod_freq[i]);
+  aMod[i].setFreq_Q16n16(mod_freq[i]);*/
+
+  mod_freq[i] = ((carrier_freq[i]>>8) * mod_to_carrier_ratio)>>8;
+  aMod[i].setFreq_Q24n8(mod_freq[i]);
+  //aMod[i].setPhaseFractional(aCarrier[i].getPhaseFractional());
+  /*
+    Serial.print(i);
+    Serial.print(" ");
+    Serial.print(aCarrier[i].getPhaseFractional());
+    Serial.print(" ");
+    Serial.println(aMod[i].getPhaseFractional());*/
 }
+
+
+
+
 
 
 
@@ -175,6 +194,17 @@ void setup() {
     envelope[i].setTimes(1, 1, 6500000, 10);
   }
 
+  computeMaxDeviation(maxDeviation[0], 0.0654, 680., 128);
+  computeMaxDeviation(maxDeviation[1], 0.0654, 258., 128);
+  computeMaxDeviation(maxDeviation[2], 0.0654, 200., 128);
+  computeMaxDeviation(maxDeviation[3], 0.0654, 150., 128);
+  computeMaxDeviation(maxDeviation[4], 0.0654, 100., 128);
+  computeMaxDeviation(maxDeviation[5], 0.0654, 100., 128);
+  computeMaxDeviation(maxDeviation[6], 0.0654, 100., 128);
+  computeMaxDeviation(maxDeviation[7], 0.0654, 100., 128);
+
+
+
 
   MIDI.setHandleNoteOn(HandleNoteOn);
   MIDI.setHandleNoteOff(HandleNoteOff);
@@ -231,16 +261,30 @@ void updateControl() {
 
   toggle++;
 
+
   switch (toggle)
   {
     case 1:
       //mod_to_carrier_ratio = mozziAnalogRead(PA6) >> 2;  //10bits: 2integers, 8 fractionnal (up to 4)
       mod_to_carrier_ratio = dual_type_pot(mozziAnalogRead(PA6));
-      for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
+      if (mod_to_carrier_ratio != mod_to_carrier_ratio_old)
+      {
+        mod_to_carrier_ratio_old = mod_to_carrier_ratio;
+        for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
+      }
       break;
     case 2:
-      deviation = mozziAnalogRead(PB0) << 10 ;
-      //for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
+      deviation_pot = mozziAnalogRead(PB0) << 10 ;
+      for (byte i = 0; i < POLYPHONY; i++)
+      {
+        deviation[i] = min(maxDeviation[Q8n8_to_Q8n0(mod_to_carrier_ratio)][Q16n16_to_Q16n0(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp)], deviation_pot);
+        /*   Serial.print(maxDeviation[Q8n8_to_Q8n0(mod_to_carrier_ratio)][Q16n16_to_Q16n0(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp)]);
+           Serial.print(" ");
+           Serial.print(deviation_pot);
+           Serial.print(" ");
+           Serial.println(deviation_sm[i]);*/
+
+      }
       break;
     case 3:
       deviation_rm_pot = mozziAnalogRead(PA5) << 4 ;
@@ -267,6 +311,8 @@ void updateControl() {
       break;
   }
 
+  //for (byte i = 0; i < POLYPHONY; i++) deviation_sm[i] = deviation_smooth[i].next(deviation[i]);
+  for (byte i = 0; i < POLYPHONY; i++) deviation_sm[i] = deviation[i];
 
 
 }
@@ -286,8 +332,8 @@ AudioOutput_t updateAudio() {
   breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);
 
 
-//deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot);  
-deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot<<2);  
+  //deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot);
+  deviation_rm = rm_smooth.next(((breath_on_rm * volume) >> 6) + deviation_rm_pot << 2);
   if ((volume >> 7) == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)
@@ -308,7 +354,7 @@ deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot<<2
       long partial_sample = 0;
 
       Q15n16 modulation_rm = deviation_rm * aCarrier[i].next() >> 8 ;
-      Q15n16 modulation = deviation * aMod[i].phMod(modulation_rm) >> 8 ;
+      Q15n16 modulation = deviation_sm[i] * aMod[i].phMod(modulation_rm) >> 8 ;
       partial_sample = aCarrier[i].phMod(modulation); // 8bits
 
 #ifdef RINGING_CHORDS
