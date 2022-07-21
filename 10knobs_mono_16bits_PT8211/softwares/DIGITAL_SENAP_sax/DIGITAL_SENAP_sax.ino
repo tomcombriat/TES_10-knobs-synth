@@ -16,13 +16,14 @@
 
 
 #define RINGING_CHORDS // chords do not follow breath when in the decaying phase if the breath is higher than their noteOff velocity
+#define DITHERING   // dithering before shifting down to 16 bits
 #include <MIDI.h>
 #include <MozziGuts.h>
 #include <Oscil.h>
 #include<MetaOscil.h>
 #include<SPI.h>
 
-
+#include <mozzi_rand.h>
 #include <mozzi_midi.h>
 #include <mozzi_fixmath.h>
 #include <Smooth.h>
@@ -116,11 +117,16 @@ void set_freq(byte i, bool reset_phase = false)
 
 inline void compute_fm_param(byte i)
 {
-/*  mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
+  /*  mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
 
-  aMod[i].setFreq_Q16n16(mod_freq[i]);*/
+    aMod[i].setFreq_Q16n16(mod_freq[i]);*/
 
-  mod_freq[i] = ((carrier_freq[i]>>8) * mod_to_carrier_ratio)>>8;
+  mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio) >> 8;
+  /*  Serial.print(Q16n16_to_float(carrier_freq[i]));
+    Serial.print(" ");
+    Serial.print(Q24n8_to_float(mod_freq[i]));
+    Serial.print(" ");
+    Serial.println(Q16n16_to_float(mod_freq[i]));*/
   aMod[i].setFreq_Q24n8(mod_freq[i]);
   //aMod[i].setPhaseFractional(aCarrier[i].getPhaseFractional());
   /*
@@ -196,12 +202,12 @@ void setup() {
 
   computeMaxDeviation(maxDeviation[0], 0.0654, 680., 128);
   computeMaxDeviation(maxDeviation[1], 0.0654, 258., 128);
-  computeMaxDeviation(maxDeviation[2], 0.0654, 200., 128);
-  computeMaxDeviation(maxDeviation[3], 0.0654, 150., 128);
-  computeMaxDeviation(maxDeviation[4], 0.0654, 100., 128);
-  computeMaxDeviation(maxDeviation[5], 0.0654, 100., 128);
-  computeMaxDeviation(maxDeviation[6], 0.0654, 100., 128);
-  computeMaxDeviation(maxDeviation[7], 0.0654, 100., 128);
+  computeMaxDeviation(maxDeviation[2], 0.0654, 256., 128);
+  computeMaxDeviation(maxDeviation[3], 0.0654, 200., 128);
+  computeMaxDeviation(maxDeviation[4], 0.0654, 200., 128);
+  computeMaxDeviation(maxDeviation[5], 0.0654, 200., 128);
+  computeMaxDeviation(maxDeviation[6], 0.0654, 200., 128);
+  computeMaxDeviation(maxDeviation[7], 0.0654, 200., 128);
 
 
 
@@ -367,6 +373,9 @@ AudioOutput_t updateAudio() {
   }
 #ifndef RINGING_CHORDS
   sample = (sample * breath_next) ; //26bits
+#endif
+#ifdef DITHERING
+  sample += rand(-512, 512);
 #endif
 
   sample = lpf.next(sample >> 10);

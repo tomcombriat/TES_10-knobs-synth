@@ -6,7 +6,7 @@
 
 int inline dual_type_pot(int input)
 {
-  if (input <= 2048) return (input >> 8) << 8;
+  if (input <= 2048) return (input >> 7) << 7;
   else return (input - 2048);
 
 }
