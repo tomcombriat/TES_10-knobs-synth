@@ -15,14 +15,14 @@
 */
 
 
-
+#define DITHERING   // dithering before shifting down to 16 bits
 #include <MIDI.h>
 #include <MozziGuts.h>
 #include <Oscil.h>
 #include<MetaOscil.h>
 #include<SPI.h>
 
-
+#include <mozzi_rand.h>
 #include <mozzi_midi.h>
 #include <mozzi_fixmath.h>
 #include <Smooth.h>
@@ -347,12 +347,15 @@ AudioOutput_t updateAudio() {
     }
   }
 
-  sample = (sample * breath_next) >> 5 ;
+  sample = (sample * breath_next) ; // 29 bits
+  #ifdef DITHERING
+  sample += rand(-4096, 4096);
+#endif
   
 
-  sample = lpf.next(sample);
+  sample = lpf.next(sample >> 13);
 
 
-  return MonoOutput::fromNBit(24, sample).clip();
+  return MonoOutput::fromNBit(16, sample).clip();
 
 }
