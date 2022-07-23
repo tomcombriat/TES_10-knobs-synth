@@ -198,7 +198,7 @@ void HandlePitchBend(byte channel, int bend)
   pitchbend = bend;
   for (byte i = 0; i < POLYPHONY; i++)
   {
-    if (envelope[i].playing()) set_freq(i, false);
+    if (envelope[i].playing() && osc_is_on[i]) set_freq(i, false);
   }
 }
 
