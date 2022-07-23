@@ -175,7 +175,7 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-  //Serial.begin(115200);
+  //Serial.begin(500000);
   pinMode(LED, OUTPUT);
   mySPI.begin();
   delay(100);
@@ -266,7 +266,14 @@ void updateControl() {
   while (MIDI.read());
 
   toggle++;
+/*
+for (byte i = 0; i < POLYPHONY; i++){
+  Serial.print(osc_is_on[i]);
+  Serial.print(" ");
+}
+Serial.println();
 
+*/
 
   switch (toggle)
   {
@@ -355,6 +362,7 @@ AudioOutput_t updateAudio() {
   {
     envelope[i].update();
     int env_next = envelope[i].next();  // for enveloppe to roll even if it is not playing
+   // if (!envelope[i].playing() && osc_is_on[i]) osc_is_on[i] = false;
     if (envelope[i].playing() && osc_is_on[i])
     {
       long partial_sample = 0;
