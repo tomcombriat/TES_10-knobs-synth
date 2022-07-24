@@ -105,6 +105,7 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial3, MIDI);
 
 void set_freq(byte i, bool reset_phase = false)
 {
+  //Serial.println("Entering set freq");
   osc_is_on[i] = true;
   Q16n16 current_note = Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp;
   Q16n16 freq = Q16n16_mtof(current_note);
@@ -290,7 +291,7 @@ Serial.println();
       deviation_pot = mozziAnalogRead(PB0) << 10 ;
       for (byte i = 0; i < POLYPHONY; i++)
       {
-        deviation[i] = min(maxDeviation[Q8n8_to_Q8n0(mod_to_carrier_ratio)][Q16n16_to_Q16n0(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp)], deviation_pot);
+       if (osc_is_on[i]) deviation[i] = min(maxDeviation[Q8n8_to_Q8n0(mod_to_carrier_ratio)][Q16n16_to_Q16n0(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp)], deviation_pot);
         /*   Serial.print(maxDeviation[Q8n8_to_Q8n0(mod_to_carrier_ratio)][Q16n16_to_Q16n0(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp)]);
            Serial.print(" ");
            Serial.print(deviation_pot);
