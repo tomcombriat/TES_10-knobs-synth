@@ -107,7 +107,7 @@ void set_freq(byte i, bool reset_phase = false)
 {
   //Serial.println("Entering set freq");
   osc_is_on[i] = true;
-  Q16n16 current_note = Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp;
+  Q16n16 current_note = Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp; // maybe put the shift here instead ?
   Q16n16 freq = Q16n16_mtof(current_note);
   freq = freq >> 1; // For stable FM, next need to be called, leading to twice the freq as a result
 
@@ -176,7 +176,7 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-  //Serial.begin(500000);
+  //Serial.begin(115200);
   pinMode(LED, OUTPUT);
   mySPI.begin();
   delay(100);
@@ -267,14 +267,6 @@ void updateControl() {
   while (MIDI.read());
 
   toggle++;
-/*
-for (byte i = 0; i < POLYPHONY; i++){
-  Serial.print(osc_is_on[i]);
-  Serial.print(" ");
-}
-Serial.println();
-
-*/
 
   switch (toggle)
   {
@@ -348,6 +340,7 @@ AudioOutput_t updateAudio() {
 
   //deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot);
   deviation_rm = rm_smooth.next(((breath_on_rm * volume) >> 6) + deviation_rm_pot << 2);
+  //if (deviation_rm > 524288) deviation_rm = 524288;
   if ((volume >> 7) == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)

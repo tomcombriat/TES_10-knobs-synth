@@ -1,8 +1,8 @@
 /*
    Combriat 2020
 
-  XORAND Sax mk3
-  A 10k synth flavor to be used with an EWI. Supports polyphony (for chords) and breath control over volume or/and filter.
+  XORAND mk3
+  A 10k synth flavor to be used with an keyboard
 
 
   Use the TES-branch of tomcombriat/Mozzi for MetaOsc.
@@ -34,38 +34,33 @@
 #include "oscil_declaration.h"
 
 
-#define CONTROL_RATE 2048 // Hz, powers of 2 are most reliable
+#define CONTROL_RATE 256 // Hz, powers of 2 are most reliable
 //#define CONTROL_RATE 4096 // Hz, powers of 2 are most reliable
 
 #define LED PA8
 
 
 Oscil<COS512_NUM_CELLS, AUDIO_RATE> aSin[POLYPHONY] = Oscil<COS512_NUM_CELLS, AUDIO_RATE> (COS512_DATA);
-Oscil<COS2048_NUM_CELLS, AUDIO_RATE> LFO[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
+//Oscil<COS2048_NUM_CELLS, AUDIO_RATE> LFO[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
 
 
 ADSR <AUDIO_RATE, AUDIO_RATE, unsigned long> envelope[POLYPHONY];
+ADSR <AUDIO_RATE, AUDIO_RATE, unsigned long> envelope_filter[POLYPHONY];
 
-LowPassFilter16 lpf;
-//LowPassFilter lpf;
-Smooth <unsigned int> cutoff_smooth(0.995f);  // 0.999 -> 15ms  // a bit sluggish?
-                                              // 0.995 -> 7ms
-Smooth <int> breath_smooth(0.98f);  // if updated at AUDIO_RATE:
-                                    // 0.99 -> 15ms maximal raise time
-                                    // 0.98 -> 8ms
-                                    // 0.9999 -> 1.3s (!!!!)
-//Portamento<CONTROL_RATE> porta;
+LowPassFilter16 lpf[POLYPHONY];
+
 
 byte notes[POLYPHONY] = {0};
 int wet_dry_mix, modulation[POLYPHONY];
 int mix1;
 int mix2;
-int mix_oscil, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, breath_on_cutoff = 0, resonance = 0, prev_resonance = 0, breath_sens = 0, volume = 0;
+int mix_oscil, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, resonance = 0, prev_resonance = 0, volume = 0;
 byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, delay_volume = 0, prev_MSB_volume = 0;
 bool sustain = false;
 bool mod = true;
 bool osc_is_on[POLYPHONY] = {false};
-unsigned int chord_attack = 1, chord_release = 1,cutoff = 0,prev_cutoff = 0,midi_cutoff = 0;
+//unsigned int chord_attack = 1, chord_release = 1,cutoff = 0,prev_cutoff = 0,midi_cutoff = 0;
+unsigned int attack = 1, release = 1, cutoff = 0, prev_cutoff = 0, midi_cutoff = 0, filter_attack = 1, filter_release = 1;
 int toggle = 0;
 Q15n16 vibrato;
 
@@ -94,9 +89,6 @@ void set_freq(byte i, bool reset_phase = false)
   aSquare[i].setFreq_Q16n16(freq);
   aTri[i].setFreq_Q16n16(freq);
   aSaw[i].setFreq_Q16n16(freq);
-
-
-  if (reset_phase) LFO[i].setPhase(0);
 }
 
 
@@ -161,11 +153,11 @@ void setup() {
     aTri[i].setCutoffFreqs( 106 * 2, 118 * 2, 134 * 2, 154 * 2, 182 * 2, 221 * 2, 282 * 2, 356 * 2, 431 * 2, 546 * 2, 630 * 2, 744 * 2, 910 * 2, 1170 * 2, 1638 * 2, 2730 * 2, 8192 * 2);
     aSaw[i].setPhase(512 >> 2 );
     aSin[i].setPhase(512 >> 2 );  // test
-    
+
   }
 
 
-  lpf.setResonance(25);
+  // lpf.setResonance(25);
 
 
 
@@ -178,7 +170,7 @@ void setup() {
   //Serial.begin(115200);
 
 
-  MIDI.begin(MIDI_CHANNEL_OMNI);
+  MIDI.begin(2);
   delay(100);
   digitalWrite(LED, LOW);
   delay(100);
@@ -229,7 +221,7 @@ void updateControl() {
   switch (toggle)
   {
     case 1:
-      mix1 =  mozziAnalogRead(PB0) >> 4;  // very steppy, but not mix2, WHY????      
+      mix1 =  mozziAnalogRead(PB0) >> 4;  // very steppy, but not mix2, WHY????
       break;
     case 2:
       mix2 =  mozziAnalogRead(PA6) >> 4;
@@ -241,21 +233,24 @@ void updateControl() {
       mix_oscil = mozziAnalogRead(PA5) >> 4 ;
       break;
     case 5:
-      chord_release = mozziAnalogRead(PA7) >> 0 ;
+      release = mozziAnalogRead(PA7) ;
+      for (byte i = 0; i < POLYPHONY; i++) envelope[i].setAttackTime(release);
       break;
     case 6:
-      chord_attack = mozziAnalogRead(PB1) >> 0 ;
+      attack = mozziAnalogRead(PB1);
+      for (byte i = 0; i < POLYPHONY; i++) envelope[i].setAttackTime(attack);
       break;
     case 7:
-      breath_on_cutoff = (mozziAnalogRead(PA4) >> 4);
-      //cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 13 ) + midi_cutoff);  // >>8
-
+      filter_attack = mozziAnalogRead(PA4);
+      for (byte i = 0; i < POLYPHONY; i++) envelope_filter[i].setAttackTime(filter_attack);
       break;
     case 8:
-      resonance  = mozziAnalogRead(PA2);
+      resonance  = mozziAnalogRead(PA1) << 4;
+      for (byte i = 0; i < POLYPHONY; i++) lpf[i].setResonance(resonance);
       break;
     case 9:
-      breath_sens = mozziAnalogRead(PA1) >> 4;
+      filter_release = mozziAnalogRead(PA2);
+      for (byte i = 0; i < POLYPHONY; i++) envelope_filter[i].setReleaseTime(filter_release);
       toggle = 0;
       break;
   }
@@ -270,24 +265,25 @@ AudioOutput_t updateAudio() {
 
 
 
-      cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff<<9));  // >>8
-      if (cutoff > 65535) cutoff = 65535;
-      if (cutoff != prev_cutoff || resonance != prev_resonance)
-      {
-        lpf.setCutoffFreqAndResonance(cutoff, resonance<<4);
- 
-
-        prev_cutoff = cutoff;
-        prev_resonance = resonance;
-      }
+  cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff << 9)); // >>8
+  if (cutoff > 65535) cutoff = 65535;
+  if (cutoff != prev_cutoff || resonance != prev_resonance)
+  {
+    lpf.setCutoffFreqAndResonance(cutoff, resonance << 4);
 
 
+    prev_cutoff = cutoff;
+    prev_resonance = resonance;
+  }
 
-      
+
+
+
 
   //int breath_next = (((breath_smooth.next(volume >> 7)) * breath_sens) >> 4) - ((breath_sens  - 255) << 3); // this could be done in updatecontrol() maybe? for speed? And the following also
-  int breath_next = breath_smooth.next((volume * breath_sens-((breath_sens-255)<<14)) >> 11);
+ // int breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);
   //if (breath_next == 0)
+  /*
   if ((volume >> 7) == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)
@@ -297,13 +293,15 @@ AudioOutput_t updateAudio() {
       oscil_state[i] = 0;   // everybody reset
     }
   }
+*/
 
-
-  vibrato = ((Q15n16)  LFO[0].next()) << 4;
+ // vibrato = ((Q15n16)  LFO[0].next()) << 4;
   for (byte i = 0; i < POLYPHONY; i++)
   {
     envelope[i].update();
+    envelope_filter[i].update();
     int env_next = envelope[i].next();  // for enveloppe to roll even if it is not playing
+     int env_next_filter = envelope_filter[i].next();  // for enveloppe to roll even if it is not playing
     if (envelope[i].playing() && osc_is_on[i])
     {
       long partial_sample = 0;
@@ -348,10 +346,10 @@ AudioOutput_t updateAudio() {
   }
 
   sample = (sample * breath_next) ; // 29 bits
-  #ifdef DITHERING
+#ifdef DITHERING
   sample += rand(-4096, 4096);
 #endif
-  
+
 
   sample = lpf.next(sample >> 13);
 

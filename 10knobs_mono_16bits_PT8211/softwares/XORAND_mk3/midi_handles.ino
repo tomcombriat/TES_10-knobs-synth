@@ -1,4 +1,4 @@
- #include "midi_handles.h"
+#include "midi_handles.h"
 #include "oscil_declaration.h"
 
 
@@ -8,6 +8,7 @@
  ********************/
 void HandleNoteOn(byte channel, byte note, byte velocity)
 {
+
   byte min_rank = 255;
   int empty_arg = -1;
   for (byte i = 0; i < POLYPHONY; i++)  //take a non playing oscil
@@ -52,21 +53,24 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
   notes[empty_arg] = note;
   set_freq(empty_arg);
 
-  if (channel == 2)
-  {
-    envelope[empty_arg].setAttackTime(1);
-    envelope[empty_arg].noteOn();
-  }
 
-  else if (channel == 3 && chord_attack > 5 )
+
+  if (attack > 5 )
   {
-    envelope[empty_arg].setAttackTime(chord_attack);
     envelope[empty_arg].noteOn(true);
   }
   else
   {
-    envelope[empty_arg].setAttackTime(1);
     envelope[empty_arg].noteOn();
+  }
+
+  if (filter_attack > 5 )
+  {
+    envelope_filter[empty_arg].noteOn(true);
+  }
+  else
+  {
+    envelope_filter[empty_arg].noteOn();
   }
 
   oscil_state[empty_arg] = 1;
@@ -94,7 +98,9 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
   }
   if (min_rank != 0) for (byte i = 0; i < POLYPHONY; i++) oscil_rank[i] -= min_rank;
 
-  volume =(int) velocity << 7 ;
+  volume = (int) velocity << 7 ;
+
+
 
 }
 
@@ -106,6 +112,7 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
 
 void HandleNoteOff(byte channel, byte note, byte velocity)
 {
+
   byte to_kill = 255;
   byte min_rank = 255;
 
@@ -120,8 +127,6 @@ void HandleNoteOff(byte channel, byte note, byte velocity)
 
   if (to_kill != 255)
   {
-    if (channel == 2)  envelope[to_kill].setReleaseTime(1);
-    else if (channel == 3) envelope[to_kill].setReleaseTime(chord_release);
     envelope[to_kill].noteOff();
     oscil_state[to_kill] = 0;
   }
@@ -157,28 +162,29 @@ void HandleControlChange(byte channel, byte control, byte val)
       else sustain = true;
       break;
 
+    /*
+        case 1:  //modulation
+          for (byte i = 0; i < POLYPHONY; i++) LFO[i].setFreq_Q16n16((Q16n16) (val << 13 ));
+          if (val == 0 && mod) mod = false;
+          else if (val != 0 && !mod) mod = true;
+          break;*/
+    /*
+        case 74: //volume (MSB)
+        //if (val > prev_MSB_volume || (val & 0b00000001111111) != 0) volume = (int) (val) << 7;
+        if (val > prev_MSB_volume) volume = (int) (val) << 7;
+        else volume = ((int) (val) << 7) + 0b00000001111111;
+        prev_MSB_volume = val;
+        break;
 
-    case 1:  //modulation
-      for (byte i = 0; i < POLYPHONY; i++) LFO[i].setFreq_Q16n16((Q16n16) (val << 13 ));
-      if (val == 0 && mod) mod = false;
-      else if (val != 0 && !mod) mod = true;
-      break;
+        case 75: //volume LSB
+          volume &= 0b11111110000000;
+          volume += val;
 
-    case 74: //volume (MSB)
-    //if (val > prev_MSB_volume || (val & 0b00000001111111) != 0) volume = (int) (val) << 7;
-    if (val > prev_MSB_volume) volume = (int) (val) << 7;
-    else volume = ((int) (val) << 7) + 0b00000001111111;
-    prev_MSB_volume = val;
-    break;
+          break;*/
 
-    case 75: //volume LSB
-      volume &= 0b11111110000000;
-      volume += val;
-
-      break;
-
-    case 71: //cutoff
-      midi_cutoff = val;
+    case 1: //cutoff
+      midi_cutoff = val << 9;
+      for (byte i =0; i<POLYPHONY;i++) enveloppe_filter[i].setSustainLevel(midi_cutoff);
       break;
 
     case 5: // pitchbend_amp
