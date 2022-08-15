@@ -2,7 +2,7 @@
 #define _osc_dec_
 
 
-#define POLYPHONY 8
+#define POLYPHONY 10
 
 
 

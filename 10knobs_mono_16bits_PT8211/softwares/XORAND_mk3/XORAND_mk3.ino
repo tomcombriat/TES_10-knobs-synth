@@ -15,7 +15,7 @@
 */
 
 
-#define DITHERING   // dithering before shifting down to 16 bits
+//#define DITHERING   // dithering before shifting down to 16 bits
 #include <MIDI.h>
 #include <MozziGuts.h>
 #include <Oscil.h>
@@ -34,35 +34,38 @@
 #include "oscil_declaration.h"
 
 
-#define CONTROL_RATE 256 // Hz, powers of 2 are most reliable
+#define CONTROL_RATE 1024 // Hz, powers of 2 are most reliable
 //#define CONTROL_RATE 4096 // Hz, powers of 2 are most reliable
 
 #define LED PA8
 
 
 Oscil<COS512_NUM_CELLS, AUDIO_RATE> aSin[POLYPHONY] = Oscil<COS512_NUM_CELLS, AUDIO_RATE> (COS512_DATA);
+Oscil<COS2048_NUM_CELLS, AUDIO_RATE> aMod[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
 //Oscil<COS2048_NUM_CELLS, AUDIO_RATE> LFO[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
 
 
 ADSR <AUDIO_RATE, AUDIO_RATE, unsigned long> envelope[POLYPHONY];
-ADSR <AUDIO_RATE, AUDIO_RATE, unsigned long> envelope_filter[POLYPHONY];
 
-LowPassFilter16 lpf[POLYPHONY];
+LowPassFilter16 lpf;
 
 
 byte notes[POLYPHONY] = {0};
-int wet_dry_mix, modulation[POLYPHONY];
+int wet_dry_mix;
 int mix1;
 int mix2;
-int mix_oscil, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, resonance = 0, prev_resonance = 0, volume = 0;
-byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, delay_volume = 0, prev_MSB_volume = 0;
+int mix_oscil, pitchbend = 0, pitchbend_amp = 2, aftertouch = 0, resonance = 0, prev_resonance = 0;
+byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0;
 bool sustain = false;
-bool mod = true;
 bool osc_is_on[POLYPHONY] = {false};
 //unsigned int chord_attack = 1, chord_release = 1,cutoff = 0,prev_cutoff = 0,midi_cutoff = 0;
 unsigned int attack = 1, release = 1, cutoff = 0, prev_cutoff = 0, midi_cutoff = 0, filter_attack = 1, filter_release = 1;
 int toggle = 0;
-Q15n16 vibrato;
+
+Q16n16 deviation = 0;
+Q8n8 mod_to_carrier_ratio = 0;
+Q24n8 mod_freq[POLYPHONY];
+Q16n16 carrier_freq[POLYPHONY];
 
 
 
@@ -84,11 +87,20 @@ void set_freq(byte i, bool reset_phase = false)
 
   osc_is_on[i] = true;
   Q16n16 freq = Q16n16_mtof(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp);
-
+carrier_freq[i] = freq;
   aSin[i].setFreq_Q16n16(freq);
   aSquare[i].setFreq_Q16n16(freq);
   aTri[i].setFreq_Q16n16(freq);
   aSaw[i].setFreq_Q16n16(freq);
+
+  //mod_freq[i] = ((freq >> 8) * mod_to_carrier_ratio) >> 8;
+ compute_FM(i);
+
+}
+
+void compute_FM(byte i)
+{
+   aMod[i].setFreq_Q24n8(((carrier_freq[i] >> 8) * mod_to_carrier_ratio) >> 8);
 }
 
 
@@ -120,7 +132,7 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-  //Serial.begin(115200);
+  Serial.begin(115200);
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH);
   mySPI.begin();
@@ -144,6 +156,7 @@ void setup() {
 
     envelope[i].setADLevels(128, 128);
     envelope[i].setTimes(1, 1, 6500000, 10);
+
     aSquare[i].setOscils(&aSq75[i], &aSq81[i], &aSq88[i], &aSq96[i], &aSq106[i], &aSq118[i], &aSq134[i], &aSq154[i], &aSq182[i], &aSq221[i], &aSq282[i], &aSq356[i], &aSq431[i], &aSq546[i], &aSq630[i], &aSq744[i], &aSq910[i], &aSq1170[i], &aSq1638[i], &aSq2730[i], &aSq8192[i]);
     aSquare[i].setCutoffFreqs(75 * 2, 81 * 2, 88 * 2, 96 * 2, 106 * 2, 118 * 2, 134 * 2, 154 * 2, 182 * 2, 221 * 2, 282 * 2, 356 * 2, 431 * 2, 546 * 2, 630 * 2, 744 * 2, 910 * 2, 1170 * 2, 1638 * 2, 2730 * 2, 8192 * 2);
 
@@ -213,11 +226,8 @@ void audioOutput(const AudioOutput f) // f is a structure containing both channe
 
 
 void updateControl() {
-
   while (MIDI.read());
-
   toggle++;
-
   switch (toggle)
   {
     case 1:
@@ -234,23 +244,20 @@ void updateControl() {
       break;
     case 5:
       release = mozziAnalogRead(PA7) ;
-      for (byte i = 0; i < POLYPHONY; i++) envelope[i].setAttackTime(release);
+      for (byte i = 0; i < POLYPHONY; i++) envelope[i].setReleaseTime(release);
       break;
     case 6:
       attack = mozziAnalogRead(PB1);
       for (byte i = 0; i < POLYPHONY; i++) envelope[i].setAttackTime(attack);
       break;
     case 7:
-      filter_attack = mozziAnalogRead(PA4);
-      for (byte i = 0; i < POLYPHONY; i++) envelope_filter[i].setAttackTime(filter_attack);
+      cutoff  = mozziAnalogRead(PA4) << 4;
+      resonance  = mozziAnalogRead(PA2) << 4;
+      lpf.setCutoffFreqAndResonance(cutoff, resonance);
       break;
     case 8:
-      resonance  = mozziAnalogRead(PA1) << 4;
-      for (byte i = 0; i < POLYPHONY; i++) lpf[i].setResonance(resonance);
-      break;
-    case 9:
-      filter_release = mozziAnalogRead(PA2);
-      for (byte i = 0; i < POLYPHONY; i++) envelope_filter[i].setReleaseTime(filter_release);
+      deviation = mozziAnalogRead(PA1);
+      
       toggle = 0;
       break;
   }
@@ -259,50 +266,12 @@ void updateControl() {
 AudioOutput_t updateAudio() {
 
   long sample = 0;
-  //envelope_audio.update();
 
-
-
-
-
-  cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff << 9)); // >>8
-  if (cutoff > 65535) cutoff = 65535;
-  if (cutoff != prev_cutoff || resonance != prev_resonance)
-  {
-    lpf.setCutoffFreqAndResonance(cutoff, resonance << 4);
-
-
-    prev_cutoff = cutoff;
-    prev_resonance = resonance;
-  }
-
-
-
-
-
-  //int breath_next = (((breath_smooth.next(volume >> 7)) * breath_sens) >> 4) - ((breath_sens  - 255) << 3); // this could be done in updatecontrol() maybe? for speed? And the following also
- // int breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);
-  //if (breath_next == 0)
-  /*
-  if ((volume >> 7) == 0)
-  {
-    for (byte i = 0; i < POLYPHONY; i++)
-    {
-      envelope[i].noteOff();
-      osc_is_on[i] = false; // so that chord do not fade out during next note afer a short pause
-      oscil_state[i] = 0;   // everybody reset
-    }
-  }
-*/
-
- // vibrato = ((Q15n16)  LFO[0].next()) << 4;
   for (byte i = 0; i < POLYPHONY; i++)
   {
     envelope[i].update();
-    envelope_filter[i].update();
     int env_next = envelope[i].next();  // for enveloppe to roll even if it is not playing
-     int env_next_filter = envelope_filter[i].next();  // for enveloppe to roll even if it is not playing
-    if (envelope[i].playing() && osc_is_on[i])
+    if (envelope[i].playing())
     {
       long partial_sample = 0;
 
@@ -312,48 +281,46 @@ AudioOutput_t updateAudio() {
       int aSaw_next;
 
 
-      if (!mod)
-      {
-        aSin_next = aSin[i].next();
-        aSquare_next = aSquare[i].next();
-        aTri_next = aTri[i].next();
-        aSaw_next = aSaw[i].next();
-      }
-      else
-      {
-        aSin_next = aSin[i].phMod(vibrato);
-        aSquare_next = aSquare[i].next();
-        aTri_next = aTri[i].phMod(vibrato);
-        aSaw_next = aSaw[i].next();
-      }
+      /*
+            aSin_next = aSin[i].next();
+            aSquare_next = aSquare[i].next();
+            aTri_next = aTri[i].next();
+            aSaw_next = aSaw[i].next();
+      */
 
+      aSin_next = aSin[i].phMod(deviation * aMod[i].next());
+      aSquare_next = aSquare[i].phMod(deviation * aMod[i].next());
+      aTri_next = aTri[i].phMod(deviation * aMod[i].next());
+      aSaw_next = aSaw[i].phMod(deviation * aMod[i].next());
 
-      int oscil1 = (((aSin_next * (255 - mix1) + aSquare_next * (mix1)) >> 8 ) * (255 - mix_oscil)) >> 5 ;
-      int oscil2 = (((aTri_next * (255 - mix2) + aSaw_next * (mix2)) >> 8 ) * mix_oscil) >> 5;
+      int oscil1 = (((aSin_next * (255 - mix1) + aSquare_next * (mix1)) >> 8 ) * (255 - mix_oscil)); // >> 5 ;// 17 bits
+      int oscil2 = (((aTri_next * (255 - mix2) + aSaw_next * (mix2)) >> 8 ) * mix_oscil);// >> 5;
 
-      int dry = oscil1 + oscil2;
+      int dry = oscil1 + oscil2; //18
       int wet1 = (oscil1 xor oscil2);
       int wet2 = oscil1 & oscil2;
 
+      partial_sample += ((three_values_knob(wet_dry_mix, 0) >> 1) * wet1)  ;
+      partial_sample += ((three_values_knob(wet_dry_mix, 1) >> 1) * dry)  ;
+      partial_sample += ((three_values_knob(wet_dry_mix, 2) >> 1) * wet2) ; //  26
 
-      partial_sample += ((three_values_knob(wet_dry_mix, 0) >> 1) * wet1) >> 8 ;
-      partial_sample += ((three_values_knob(wet_dry_mix, 1) >> 1) * dry) >> 8 ;
-      partial_sample += ((three_values_knob(wet_dry_mix, 2) >> 1) * wet2) >> 8 ;
-
-      sample += (partial_sample * env_next) >> 1;
+      //Serial.println(partial_sample);
+      //partial_sample = lpf[i].next(partial_sample >> 10); //16bits
+      partial_sample = partial_sample >> 10;
+      sample += (partial_sample * env_next);  //23
 
     }
   }
 
-  sample = (sample * breath_next) ; // 29 bits
+  sample = lpf.next(sample);
+
 #ifdef DITHERING
-  sample += rand(-4096, 4096);
+  sample += rand(-128, 128);
 #endif
 
 
-  sample = lpf.next(sample >> 13);
 
 
-  return MonoOutput::fromNBit(16, sample).clip();
+  return MonoOutput::fromNBit(23, sample).clip();
 
 }

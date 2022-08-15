@@ -11,15 +11,25 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
 
   byte min_rank = 255;
   int empty_arg = -1;
-  for (byte i = 0; i < POLYPHONY; i++)  //take a non playing oscil
+  for (byte i = 0; i < POLYPHONY; i++)
   {
-    if (!envelope[i].playing() && oscil_rank[i] < min_rank)
+    if (notes[i] == note)
     {
       empty_arg = i;
-      min_rank = oscil_rank[i];
+      break;
     }
   }
-
+  if (empty_arg == -1)
+  {
+    for (byte i = 0; i < POLYPHONY; i++)  //take a non playing oscil
+    {
+      if (!envelope[i].playing() && oscil_rank[i] < min_rank)
+      {
+        empty_arg = i;
+        min_rank = oscil_rank[i];
+      }
+    }
+  }
   if (empty_arg == -1)  //kill a oscil in release phase
   {
     min_rank = 255;
@@ -53,25 +63,14 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
   notes[empty_arg] = note;
   set_freq(empty_arg);
 
+  //velocities[empty_arg]=velocity;
+envelope[empty_arg].setDecayLevel(velocity);
+  if (attack > 5 )    envelope[empty_arg].noteOn(true);
+
+  else envelope[empty_arg].noteOn();
 
 
-  if (attack > 5 )
-  {
-    envelope[empty_arg].noteOn(true);
-  }
-  else
-  {
-    envelope[empty_arg].noteOn();
-  }
 
-  if (filter_attack > 5 )
-  {
-    envelope_filter[empty_arg].noteOn(true);
-  }
-  else
-  {
-    envelope_filter[empty_arg].noteOn();
-  }
 
   oscil_state[empty_arg] = 1;
 
@@ -98,7 +97,7 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
   }
   if (min_rank != 0) for (byte i = 0; i < POLYPHONY; i++) oscil_rank[i] -= min_rank;
 
-  volume = (int) velocity << 7 ;
+
 
 
 
@@ -127,15 +126,21 @@ void HandleNoteOff(byte channel, byte note, byte velocity)
 
   if (to_kill != 255)
   {
-    envelope[to_kill].noteOff();
-    oscil_state[to_kill] = 0;
-  }
+    if (!sustain)
+    {
+      envelope[to_kill].noteOff();
+      oscil_state[to_kill] = 0;
+    }
+    else oscil_state[to_kill] = 2;
 
-  for (byte i = 0; i < POLYPHONY; i++)
-  {
-    if (oscil_rank[i] > oscil_rank[to_kill]) oscil_rank[i] -= 1;
+    //envelope[0].noteOff();
+    for (byte i = 0; i < POLYPHONY; i++)
+    {
+      if (oscil_rank[i] > oscil_rank[to_kill]) oscil_rank[i] -= 1;
+    }
   }
 }
+
 
 
 
@@ -182,9 +187,10 @@ void HandleControlChange(byte channel, byte control, byte val)
 
           break;*/
 
-    case 1: //cutoff
-      midi_cutoff = val << 9;
-      for (byte i =0; i<POLYPHONY;i++) enveloppe_filter[i].setSustainLevel(midi_cutoff);
+    case 1: //modulation
+      mod_to_carrier_ratio =((Q8n8) val);
+
+      for (byte i = 0; i < POLYPHONY; i++) compute_FM(i);
       break;
 
     case 5: // pitchbend_amp
