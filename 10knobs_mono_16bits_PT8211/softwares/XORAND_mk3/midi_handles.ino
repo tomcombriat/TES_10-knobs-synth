@@ -64,6 +64,7 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
   set_freq(empty_arg);
 
   //velocities[empty_arg]=velocity;
+  envelope[empty_arg].setAttackLevel(velocity);
 envelope[empty_arg].setDecayLevel(velocity);
   if (attack > 5 )    envelope[empty_arg].noteOn(true);
 
@@ -188,9 +189,10 @@ void HandleControlChange(byte channel, byte control, byte val)
           break;*/
 
     case 1: //modulation
-      mod_to_carrier_ratio =((Q8n8) val);
+      //mod_to_carrier_ratio =((Q8n8) val);
+      deviation = val << 2;
 
-      for (byte i = 0; i < POLYPHONY; i++) compute_FM(i);
+      //for (byte i = 0; i < POLYPHONY; i++) compute_FM(i);
       break;
 
     case 5: // pitchbend_amp

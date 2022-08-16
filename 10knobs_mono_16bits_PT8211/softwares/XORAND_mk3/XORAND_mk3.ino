@@ -100,7 +100,8 @@ carrier_freq[i] = freq;
 
 void compute_FM(byte i)
 {
-   aMod[i].setFreq_Q24n8(((carrier_freq[i] >> 8) * mod_to_carrier_ratio) >> 8);
+   //aMod[i].setFreq_Q24n8(((carrier_freq[i] >> 8) * mod_to_carrier_ratio) >> 8);
+   aMod[i].setFreq_Q24n8(((carrier_freq[i] >> 8) * mod_to_carrier_ratio) >> (8+5));
 }
 
 
@@ -256,8 +257,9 @@ void updateControl() {
       lpf.setCutoffFreqAndResonance(cutoff, resonance);
       break;
     case 8:
-      deviation = mozziAnalogRead(PA1);
-      
+      //deviation = mozziAnalogRead(PA1);
+      mod_to_carrier_ratio = ((Q8n8) mozziAnalogRead(PA1));
+      for (byte i = 0; i < POLYPHONY; i++) compute_FM(i);
       toggle = 0;
       break;
   }
