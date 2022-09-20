@@ -112,11 +112,11 @@ void set_freq(byte i, bool reset_phase = false)
   freq = freq >> 1; // For stable FM, next need to be called, leading to twice the freq as a result
 
   carrier_freq[i] = freq;
-  aCarrier[i].setFreq_Q16n16(freq);
-  compute_fm_param(i);
+
+  compute_fm_param(i, reset_phase);
 }
 
-inline void compute_fm_param(byte i)
+inline void compute_fm_param(byte i, bool reset_phase)
 {
   /*  mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
 
@@ -128,14 +128,23 @@ inline void compute_fm_param(byte i)
     Serial.print(Q24n8_to_float(mod_freq[i]));
     Serial.print(" ");
     Serial.println(Q16n16_to_float(mod_freq[i]));*/
+  // put the aCarrier set freq here ? With noInterrupts around?
+
+  aCarrier[i].setFreq_Q16n16(carrier_freq[i]);
   aMod[i].setFreq_Q24n8(mod_freq[i]);
   //aMod[i].setPhaseFractional(aCarrier[i].getPhaseFractional());
-  /*
-    Serial.print(i);
-    Serial.print(" ");
-    Serial.print(aCarrier[i].getPhaseFractional());
-    Serial.print(" ");
-    Serial.println(aMod[i].getPhaseFractional());*/
+if (reset_phase)
+{
+  aCarrier[i].setPhase(0);
+  aMod[i].setPhase(0);
+}
+
+/*
+  Serial.print(i);
+  Serial.print(" ");
+  Serial.print(aCarrier[i].getPhaseFractional());
+  Serial.print(" ");
+  Serial.println(aMod[i].getPhaseFractional());*/
 }
 
 
@@ -176,7 +185,7 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-  //Serial.begin(115200);
+ // Serial.begin(115200);
   pinMode(LED, OUTPUT);
   mySPI.begin();
   delay(100);
@@ -276,14 +285,14 @@ void updateControl() {
       if (mod_to_carrier_ratio != mod_to_carrier_ratio_old)
       {
         mod_to_carrier_ratio_old = mod_to_carrier_ratio;
-        for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i);
+        for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i,false);
       }
       break;
     case 2:
       deviation_pot = mozziAnalogRead(PB0) << 10 ;
       for (byte i = 0; i < POLYPHONY; i++)
       {
-       if (osc_is_on[i]) deviation[i] = min(maxDeviation[Q8n8_to_Q8n0(mod_to_carrier_ratio)][Q16n16_to_Q16n0(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp)], deviation_pot);
+        if (osc_is_on[i]) deviation[i] = min(maxDeviation[Q8n8_to_Q8n0(mod_to_carrier_ratio)][Q16n16_to_Q16n0(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp)], deviation_pot);
         /*   Serial.print(maxDeviation[Q8n8_to_Q8n0(mod_to_carrier_ratio)][Q16n16_to_Q16n0(Q8n0_to_Q16n16(notes[i]) + (pitchbend << 3) * pitchbend_amp)]);
            Serial.print(" ");
            Serial.print(deviation_pot);
@@ -356,10 +365,11 @@ AudioOutput_t updateAudio() {
   {
     envelope[i].update();
     int env_next = envelope[i].next();  // for enveloppe to roll even if it is not playing
-   // if (!envelope[i].playing() && osc_is_on[i]) osc_is_on[i] = false;
+    // if (!envelope[i].playing() && osc_is_on[i]) osc_is_on[i] = false;
     if (envelope[i].playing() && osc_is_on[i])
     {
       long partial_sample = 0;
+
 
       Q15n16 modulation_rm = deviation_rm * aCarrier[i].next() >> 8 ;
       Q15n16 modulation = deviation_sm[i] * aMod[i].phMod(modulation_rm) >> 8 ;
