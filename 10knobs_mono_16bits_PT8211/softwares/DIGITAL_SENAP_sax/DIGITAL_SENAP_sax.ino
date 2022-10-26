@@ -185,7 +185,7 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
- // Serial.begin(115200);
+// Serial.begin(115200);
   pinMode(LED, OUTPUT);
   mySPI.begin();
   delay(100);
@@ -328,8 +328,13 @@ void updateControl() {
 
   //for (byte i = 0; i < POLYPHONY; i++) deviation_sm[i] = deviation_smooth[i].next(deviation[i]);
   for (byte i = 0; i < POLYPHONY; i++) deviation_sm[i] = deviation[i];
-
-
+/*
+Serial.print(volume);
+Serial.print(" ");
+unsigned int tamp = volume * (287-breath_sens);
+tamp = tamp >> 5;
+if (tamp > 16384) tamp = 16384;
+Serial.println(tamp);*/
 }
 
 AudioOutput_t updateAudio() {
@@ -344,8 +349,11 @@ AudioOutput_t updateAudio() {
     prev_cutoff = cutoff;
     prev_resonance = resonance;
   }
-  breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);
-
+ //breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);  //11bits
+unsigned int tamp_volume = volume * (287-breath_sens);
+tamp_volume = tamp_volume >> 3;
+if (tamp_volume > 35768) tamp_volume = 35768;  //15 bits
+breath_next = breath_smooth.next(tamp_volume);
 
   //deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot);
   deviation_rm = rm_smooth.next(((breath_on_rm * volume) >> 6) + deviation_rm_pot << 2);
@@ -357,6 +365,7 @@ AudioOutput_t updateAudio() {
       envelope[i].noteOff();
       osc_is_on[i] = false; // so that chord do not fade out during next note afer a short pause
       oscil_state[i] = 0;   // everybody reset
+      volume = 0;
     }
   }
 
@@ -384,13 +393,13 @@ AudioOutput_t updateAudio() {
     }
   }
 #ifndef RINGING_CHORDS
-  sample = (sample * breath_next) ; //26bits
+  sample = (sample * breath_next) ; //26bits  //31
 #endif
 #ifdef DITHERING
-  sample += rand(-512, 512);
+  sample += rand(-16384, 16384);  //
 #endif
 
-  sample = lpf.next(sample >> 10);
+  sample = lpf.next(sample >> 15);
 
 
 

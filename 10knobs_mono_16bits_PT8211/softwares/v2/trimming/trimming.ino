@@ -45,7 +45,9 @@ void loop() {
     audioHook();
 }
 
-void updateControl() {}
+void updateControl() {
+  digitalWrite(LED,!digitalRead(LED));
+  }
 
 AudioOutput_t updateAudio() {
 return MonoOutput::from8Bit( aSin.next()).clip();

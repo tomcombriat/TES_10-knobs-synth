@@ -50,7 +50,7 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
 
 
   notes[empty_arg] = note;
-  set_freq(empty_arg);
+  set_freq(empty_arg,true);
 //aMod[empty_arg].setPhaseFractional(aCarrier[empty_arg].getPhaseFractional());
 
   if (channel == 2)
