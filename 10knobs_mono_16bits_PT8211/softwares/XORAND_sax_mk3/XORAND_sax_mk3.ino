@@ -287,8 +287,8 @@ AudioOutput_t updateAudio() {
 
   //int breath_next = (((breath_smooth.next(volume >> 7)) * breath_sens) >> 4) - ((breath_sens  - 255) << 3); // this could be done in updatecontrol() maybe? for speed? And the following also
  // int breath_next = breath_smooth.next((volume * breath_sens-((breath_sens-255)<<14)) >> 11);
- unsigned int tamp_volume = volume * (287-breath_sens);
-tamp_volume = tamp_volume >> 5;
+ unsigned int tamp_volume = volume * (287-breath_sens);  //14+5 bits = 19
+tamp_volume = tamp_volume >> 6;
 if (tamp_volume > 8192) tamp_volume = 8192;  //13 bits
 unsigned int breath_next = breath_smooth.next(tamp_volume);
   //if (breath_next == 0)

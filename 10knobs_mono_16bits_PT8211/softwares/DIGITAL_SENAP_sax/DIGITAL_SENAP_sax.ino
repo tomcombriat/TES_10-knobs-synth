@@ -350,9 +350,9 @@ AudioOutput_t updateAudio() {
     prev_resonance = resonance;
   }
  //breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);  //11bits
-unsigned int tamp_volume = volume * (287-breath_sens);
+unsigned int tamp_volume = volume * (287-breath_sens);  //14+5 = 19bits
 tamp_volume = tamp_volume >> 3;
-if (tamp_volume > 35768) tamp_volume = 35768;  //15 bits
+if (tamp_volume > 65535) tamp_volume = 65535;  //16 bits
 breath_next = breath_smooth.next(tamp_volume);
 
   //deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot);
@@ -393,7 +393,7 @@ breath_next = breath_smooth.next(tamp_volume);
     }
   }
 #ifndef RINGING_CHORDS
-  sample = (sample * breath_next) ; //26bits  //31
+  sample = (sample * breath_next) ; //  //31
 #endif
 #ifdef DITHERING
   sample += rand(-16384, 16384);  //
