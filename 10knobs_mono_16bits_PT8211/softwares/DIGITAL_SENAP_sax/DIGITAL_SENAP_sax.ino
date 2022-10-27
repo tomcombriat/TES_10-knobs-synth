@@ -72,6 +72,7 @@ bool osc_is_on[POLYPHONY] = {false};
 int breath_at_note_off[POLYPHONY] = {0}, breath_next = 0;
 unsigned int chord_attack = 1, chord_release = 1, cutoff = 0, prev_cutoff = 0, midi_cutoff = 0;
 uint32_t deviation_rm;
+byte breath_on_vol_LUT[256];
 
 
 
@@ -133,18 +134,18 @@ inline void compute_fm_param(byte i, bool reset_phase)
   aCarrier[i].setFreq_Q16n16(carrier_freq[i]);
   aMod[i].setFreq_Q24n8(mod_freq[i]);
   //aMod[i].setPhaseFractional(aCarrier[i].getPhaseFractional());
-if (reset_phase)
-{
-  aCarrier[i].setPhase(0);
-  aMod[i].setPhase(0);
-}
+  if (reset_phase)
+  {
+    aCarrier[i].setPhase(0);
+    aMod[i].setPhase(0);
+  }
 
-/*
-  Serial.print(i);
-  Serial.print(" ");
-  Serial.print(aCarrier[i].getPhaseFractional());
-  Serial.print(" ");
-  Serial.println(aMod[i].getPhaseFractional());*/
+  /*
+    Serial.print(i);
+    Serial.print(" ");
+    Serial.print(aCarrier[i].getPhaseFractional());
+    Serial.print(" ");
+    Serial.println(aMod[i].getPhaseFractional());*/
 }
 
 
@@ -185,7 +186,7 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-// Serial.begin(115200);
+  //Serial.begin(115200);
   pinMode(LED, OUTPUT);
   mySPI.begin();
   delay(100);
@@ -203,6 +204,12 @@ void setup() {
   pinMode(PA6, INPUT);
   pinMode(PA7, INPUT);
 
+
+  for (int i = 0; i < 256; i++)
+  {
+    if (i != 0)  breath_on_vol_LUT[i] = log((float) i) / log(255.) * 255;
+    else breath_on_vol_LUT[i] = 0;
+  }
 
   for (byte i = 0; i < POLYPHONY; i++)
   {
@@ -285,7 +292,7 @@ void updateControl() {
       if (mod_to_carrier_ratio != mod_to_carrier_ratio_old)
       {
         mod_to_carrier_ratio_old = mod_to_carrier_ratio;
-        for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i,false);
+        for (byte i = 0; i < POLYPHONY; i++)  compute_fm_param(i, false);
       }
       break;
     case 2:
@@ -328,13 +335,13 @@ void updateControl() {
 
   //for (byte i = 0; i < POLYPHONY; i++) deviation_sm[i] = deviation_smooth[i].next(deviation[i]);
   for (byte i = 0; i < POLYPHONY; i++) deviation_sm[i] = deviation[i];
-/*
-Serial.print(volume);
-Serial.print(" ");
-unsigned int tamp = volume * (287-breath_sens);
-tamp = tamp >> 5;
-if (tamp > 16384) tamp = 16384;
-Serial.println(tamp);*/
+  /*
+    Serial.print(volume);
+    Serial.print(" ");
+    unsigned int tamp = volume * (287-breath_sens);
+    tamp = tamp >> 5;
+    if (tamp > 16384) tamp = 16384;
+    Serial.println(tamp);*/
 }
 
 AudioOutput_t updateAudio() {
@@ -349,11 +356,12 @@ AudioOutput_t updateAudio() {
     prev_cutoff = cutoff;
     prev_resonance = resonance;
   }
- //breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);  //11bits
-unsigned int tamp_volume = volume * (287-breath_sens);  //14+5 = 19bits
-tamp_volume = tamp_volume >> 3;
-if (tamp_volume > 65535) tamp_volume = 65535;  //16 bits
-breath_next = breath_smooth.next(tamp_volume);
+  //breath_next = breath_smooth.next((volume * breath_sens - ((breath_sens - 255) << 14)) >> 11);  //11bits
+  //unsigned int tamp_volume = volume * (287-breath_sens);  //14+5 = 19bits
+  unsigned int tamp_volume = (volume * (263 - breath_on_vol_LUT[breath_sens]));
+  tamp_volume = tamp_volume >> 1;
+  if (tamp_volume > 65535) tamp_volume = 65535;  //16 bits
+  breath_next = breath_smooth.next(tamp_volume);
 
   //deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot);
   deviation_rm = rm_smooth.next(((breath_on_rm * volume) >> 6) + deviation_rm_pot << 2);
@@ -399,7 +407,7 @@ breath_next = breath_smooth.next(tamp_volume);
   sample += rand(-16384, 16384);  //
 #endif
 
-  sample = lpf.next(sample >> 15);
+  sample = lpf.next(sample >> 15); // that's 16bits, overflowing with chords?
 
 
 
