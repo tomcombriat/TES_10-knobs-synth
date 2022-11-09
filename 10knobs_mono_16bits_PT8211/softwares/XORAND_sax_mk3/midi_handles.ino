@@ -94,7 +94,9 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
   }
   if (min_rank != 0) for (byte i = 0; i < POLYPHONY; i++) oscil_rank[i] -= min_rank;
 
-  volume =(int) velocity << 7 ;
+  //volume =(int) velocity << 7 ;
+    volume &= 0b00000001111111;
+    volume += (int) velocity <<7;
 
 }
 
