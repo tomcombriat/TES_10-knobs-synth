@@ -186,7 +186,7 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-  Serial.begin(115200);
+  //Serial.begin(115200);
   pinMode(LED, OUTPUT);
   mySPI.begin();
   delay(100);
@@ -281,6 +281,7 @@ void audioOutput(const AudioOutput f) // f is a structure containing both channe
 
 void updateControl() {
   while (MIDI.read());
+  
   if ((volume) == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)

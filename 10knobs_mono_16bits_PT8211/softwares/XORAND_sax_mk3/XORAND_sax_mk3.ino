@@ -224,6 +224,17 @@ void updateControl() {
 
   while (MIDI.read());
 
+    if ((volume) == 0)
+  {
+    for (byte i = 0; i < POLYPHONY; i++)
+    {
+      envelope[i].noteOff();
+      osc_is_on[i] = false; // so that chord do not fade out during next note afer a short pause
+      oscil_state[i] = 0;   // everybody reset
+      volume = 0;
+    }
+  }
+
   toggle++;
 
   switch (toggle)
