@@ -186,7 +186,7 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-  //Serial.begin(115200);
+  Serial.begin(115200);
   pinMode(LED, OUTPUT);
   mySPI.begin();
   delay(100);
@@ -281,6 +281,17 @@ void audioOutput(const AudioOutput f) // f is a structure containing both channe
 
 void updateControl() {
   while (MIDI.read());
+  if ((volume) == 0)
+  {
+    for (byte i = 0; i < POLYPHONY; i++)
+    {
+      envelope[i].noteOff();
+      osc_is_on[i] = false; // so that chord do not fade out during next note afer a short pause
+      oscil_state[i] = 0;   // everybody reset
+      volume = 0;
+    }
+  }
+
 
   toggle++;
 
@@ -366,8 +377,10 @@ AudioOutput_t updateAudio() {
   //deviation_rm = rm_smooth.next(((breath_on_rm * volume)>>6) + deviation_rm_pot);
   deviation_rm = rm_smooth.next(((breath_on_rm * volume) >> 6) + deviation_rm_pot << 2);
   //if (deviation_rm > 524288) deviation_rm = 524288;
-  if ((volume >> 7) == 0)
-  {
+
+  /*
+    if ((volume >> 7) == 0) //reduce
+    {
     for (byte i = 0; i < POLYPHONY; i++)
     {
       envelope[i].noteOff();
@@ -375,8 +388,8 @@ AudioOutput_t updateAudio() {
       oscil_state[i] = 0;   // everybody reset
       volume = 0;
     }
-  }
-
+    }
+  */
 
   for (byte i = 0; i < POLYPHONY; i++)
   {

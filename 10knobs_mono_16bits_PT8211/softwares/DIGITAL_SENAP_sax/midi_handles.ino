@@ -172,15 +172,27 @@ void HandleControlChange(byte channel, byte control, byte val)
       break;*/
 
     case 74: //volume (MSB)
+    Serial.print("MSB ");
+    Serial.print(val);
+    Serial.print(" ");
+    
     //if (val > prev_MSB_volume || (val & 0b00000001111111) != 0) volume = (int) (val) << 7;
-    if (val > prev_MSB_volume) volume = (int) (val) << 7;
+  /*  if (val > prev_MSB_volume) volume = (int) (val) << 7;
     else volume = ((int) (val) << 7) + 0b00000001111111;
-    prev_MSB_volume = val;
+    prev_MSB_volume = val;*/
+    volume &= 0b00000001111111;
+    volume += val <<7;
+              
+    Serial.println(volume);
     break;
 
     case 75: //volume LSB
+        Serial.print("LSB ");
+    Serial.print(val);
       volume &= 0b11111110000000;
       volume += val;
+      Serial.print(" ");
+      Serial.println(volume);
 
       break;
 
