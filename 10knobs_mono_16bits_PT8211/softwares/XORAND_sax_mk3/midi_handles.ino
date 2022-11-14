@@ -1,4 +1,4 @@
- #include "midi_handles.h"
+#include "midi_handles.h"
 #include "oscil_declaration.h"
 
 
@@ -95,8 +95,8 @@ void HandleNoteOn(byte channel, byte note, byte velocity)
   if (min_rank != 0) for (byte i = 0; i < POLYPHONY; i++) oscil_rank[i] -= min_rank;
 
   //volume =(int) velocity << 7 ;
-    volume &= 0b00000001111111;
-    volume += (int) velocity <<7;
+  volume &= 0b00000001111111;
+  volume += (int) velocity << 7;
 
 }
 
@@ -168,15 +168,15 @@ void HandleControlChange(byte channel, byte control, byte val)
 
     case 74: //volume (MSB)
       //if (val > prev_MSB_volume || (val & 0b00000001111111) != 0) volume = (int) (val) << 7;
-        if (val > prev_MSB_volume) volume = (int) (val) << 7;
-	else if (val == 0)
-	  {
-	    volume &= 0b00000001111111;
-            volume += val << 7;
-	  }
-        else volume = ((int) (val) << 7) + 0b00000001111111;
-        prev_MSB_volume = val;
-    break;
+      if (val > prev_MSB_volume) volume = (int) (val) << 7;
+      else if (val == 0)
+      {
+        volume &= 0b00000001111111;
+        volume += val << 7;
+      }
+      else volume = ((int) (val) << 7) + 0b00000001111111;
+      prev_MSB_volume = val;
+      break;
 
     case 75: //volume LSB
       volume &= 0b11111110000000;

@@ -49,11 +49,11 @@ ADSR <AUDIO_RATE, AUDIO_RATE, unsigned long> envelope[POLYPHONY];
 LowPassFilter16 lpf;
 //LowPassFilter lpf;
 Smooth <unsigned int> cutoff_smooth(0.995f);  // 0.999 -> 15ms  // a bit sluggish?
-                                              // 0.995 -> 7ms
+// 0.995 -> 7ms
 Smooth <int> breath_smooth(0.98f);  // if updated at AUDIO_RATE:
-                                    // 0.99 -> 15ms maximal raise time
-                                    // 0.98 -> 8ms
-                                    // 0.9999 -> 1.3s (!!!!)
+// 0.99 -> 15ms maximal raise time
+// 0.98 -> 8ms
+// 0.9999 -> 1.3s (!!!!)
 //Portamento<CONTROL_RATE> porta;
 
 byte notes[POLYPHONY] = {0};
@@ -65,9 +65,10 @@ byte oscil_state[POLYPHONY], oscil_rank[POLYPHONY], runner = 0, delay_volume = 0
 bool sustain = false;
 bool mod = true;
 bool osc_is_on[POLYPHONY] = {false};
-unsigned int chord_attack = 1, chord_release = 1,cutoff = 0,prev_cutoff = 0,midi_cutoff = 0;
+unsigned int chord_attack = 1, chord_release = 1, cutoff = 0, prev_cutoff = 0, midi_cutoff = 0;
 int toggle = 0;
 Q15n16 vibrato;
+byte breath_on_vol_LUT[256];
 
 
 
@@ -147,6 +148,12 @@ void setup() {
   pinMode(PA6, INPUT);
   pinMode(PA7, INPUT);
 
+
+  for (int i = 0; i < 256; i++)
+  {
+    if (i != 0)  breath_on_vol_LUT[i] = log((float) i) / log(255.) * 255;
+    else breath_on_vol_LUT[i] = 0;
+  }
   for (byte i = 0; i < POLYPHONY; i++)
   {
 
@@ -161,7 +168,7 @@ void setup() {
     aTri[i].setCutoffFreqs( 106 * 2, 118 * 2, 134 * 2, 154 * 2, 182 * 2, 221 * 2, 282 * 2, 356 * 2, 431 * 2, 546 * 2, 630 * 2, 744 * 2, 910 * 2, 1170 * 2, 1638 * 2, 2730 * 2, 8192 * 2);
     aSaw[i].setPhase(512 >> 2 );
     aSin[i].setPhase(512 >> 2 );  // test
-    
+
   }
 
 
@@ -224,7 +231,7 @@ void updateControl() {
 
   while (MIDI.read());
 
-    if ((volume) == 0)
+  if ((volume) == 0)
   {
     for (byte i = 0; i < POLYPHONY; i++)
     {
@@ -240,7 +247,7 @@ void updateControl() {
   switch (toggle)
   {
     case 1:
-      mix1 =  mozziAnalogRead(PB0) >> 4;  // very steppy, but not mix2, WHY????      
+      mix1 =  mozziAnalogRead(PB0) >> 4;  // very steppy, but not mix2, WHY????
       break;
     case 2:
       mix2 =  mozziAnalogRead(PA6) >> 4;
@@ -281,27 +288,27 @@ AudioOutput_t updateAudio() {
 
 
 
-      cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff<<9));  // >>8
-      if (cutoff > 65535) cutoff = 65535;
-      if (cutoff != prev_cutoff || resonance != prev_resonance)
-      {
-        lpf.setCutoffFreqAndResonance(cutoff, resonance<<4);
- 
-
-        prev_cutoff = cutoff;
-        prev_resonance = resonance;
-      }
+  cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 6 ) + (midi_cutoff << 9)); // >>8
+  if (cutoff > 65535) cutoff = 65535;
+  if (cutoff != prev_cutoff || resonance != prev_resonance)
+  {
+    lpf.setCutoffFreqAndResonance(cutoff, resonance << 4);
 
 
+    prev_cutoff = cutoff;
+    prev_resonance = resonance;
+  }
 
-      
+
+
+
 
   //int breath_next = (((breath_smooth.next(volume >> 7)) * breath_sens) >> 4) - ((breath_sens  - 255) << 3); // this could be done in updatecontrol() maybe? for speed? And the following also
- // int breath_next = breath_smooth.next((volume * breath_sens-((breath_sens-255)<<14)) >> 11);
- unsigned int tamp_volume = volume * (287-breath_sens);  //14+5 bits = 19
-tamp_volume = tamp_volume >> 6;
-if (tamp_volume > 8192) tamp_volume = 8192;  //13 bits
-unsigned int breath_next = breath_smooth.next(tamp_volume);
+  // int breath_next = breath_smooth.next((volume * breath_sens-((breath_sens-255)<<14)) >> 11);
+  unsigned int tamp_volume = (volume * (263 - breath_on_vol_LUT[breath_sens]));
+  tamp_volume = tamp_volume >> 4;
+  if (tamp_volume > 8192)  tamp_volume = 8192; //13 bits
+  int  breath_next = breath_smooth.next(tamp_volume);
   //if (breath_next == 0)
   if ((volume >> 7) == 0)
   {
@@ -363,10 +370,10 @@ unsigned int breath_next = breath_smooth.next(tamp_volume);
   }
 
   sample = (sample * breath_next) ; // 31 bits
-  #ifdef DITHERING
+#ifdef DITHERING
   sample += rand(-16384, 16384);
 #endif
-  
+
 
   sample = lpf.next(sample >> 15);
 
