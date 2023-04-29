@@ -1,11 +1,9 @@
 /*
-   Combriat 2020
+   Combriat 2022-2023
 
-  XORAND Sax mk3
+  Digital Senap Sax mk1
   A 10k synth flavor to be used with an EWI. Supports polyphony (for chords) and breath control over volume or/and filter.
 
-
-  Use the TES-branch of tomcombriat/Mozzi for MetaOsc.
 
 
   Mozzi config should be set to use an external audio
@@ -17,6 +15,7 @@
 
 #define RINGING_CHORDS // chords do not follow breath when in the decaying phase if the breath is higher than their noteOff velocity
 #define DITHERING   // dithering before shifting down to 16 bits
+#define LEGACYSTM  // this code is normally compiled with the "original" STM32duino. Uncomment this line to use the ST supported core.
 #include <MIDI.h>
 #include <MozziGuts.h>
 #include <Oscil.h>
@@ -93,15 +92,18 @@ Q16n16 deviation_rm_pot;
 
 
 // External audio output parameters and DAC declaration
+#ifdef LEGACYSTM
 SPIClass mySPI(2);
+#else
+SPIClass mySPI(PB15,PB14,PB13);
+#endif
 #define WS_pin PB8
 
 
-
-
+#ifndef LEGACYSTM
+HardwareSerial Serial3(PB11,PB10);
+#endif
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial3, MIDI);
-
-
 
 
 void set_freq(byte i, bool reset_phase = false)
@@ -186,11 +188,11 @@ int three_values_knob(int val, int i)
 
 
 void setup() {
-  //Serial.begin(115200);
+  Serial1.begin(115200);
   pinMode(LED, OUTPUT);
   mySPI.begin();
   delay(100);
-  mySPI.beginTransaction(SPISettings(2000000000, MSBFIRST, SPI_MODE0)); //MSB first, according to the DAC spec
+  mySPI.beginTransaction(SPISettings(200000000, MSBFIRST, SPI_MODE0)); //MSB first, according to the DAC spec
 
   pinMode(WS_pin, OUTPUT);
 
@@ -253,7 +255,6 @@ void setup() {
   digitalWrite(LED, LOW);
 
 
-
 }
 
 
@@ -280,7 +281,12 @@ void audioOutput(const AudioOutput f) // f is a structure containing both channe
 
 
 void updateControl() {
-  while (MIDI.read());
+//  while (MIDI.read());
+while (MIDI.read())
+{
+      digitalWrite(LED, HIGH);
+}
+Serial3.println("c");
   
   if ((volume) == 0)
   {
