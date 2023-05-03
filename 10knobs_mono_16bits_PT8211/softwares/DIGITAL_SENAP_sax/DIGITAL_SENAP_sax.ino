@@ -13,7 +13,7 @@
 */
 
 
-//#define RINGING_CHORDS // chords do not follow breath when in the decaying phase if the breath is higher than their noteOff velocity
+#define RINGING_CHORDS // chords do not follow breath when in the decaying phase if the breath is higher than their noteOff velocity
 #define DITHERING  // dithering before shifting down to 16 bits
 #define LEGACYSTM  // this code is normally compiled with the "original" STM32duino. Uncomment this line to use the ST supported core.
 #include <MIDI.h>
@@ -37,8 +37,8 @@
 #include <tables/cos2048_int8.h>
 
 
-#define CONTROL_RATE 4096  // Hz, powers of 2 are most reliable
-//#define CONTROL_RATE 2048
+//#define CONTROL_RATE 4096  // Hz, powers of 2 are most reliable
+#define CONTROL_RATE 2048
 
 
 #define LED PA8
@@ -344,8 +344,6 @@ void updateControl() {
     Serial.println(tamp);*/
 }
 
-int countt = 0;
-
 AudioOutput_t updateAudio() {
   long sample = 0;
   cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 6) + (midi_cutoff << 9));  // >>8
@@ -404,8 +402,6 @@ AudioOutput_t updateAudio() {
   sample += rand(-16384, 16384);  //
 #endif
   sample = lpf.next(sample >> 15);  // that's 16bits, overflowing with chords?
-
-
 
   return MonoOutput::fromNBit(16, sample).clip();
 }
