@@ -3245,7 +3245,7 @@
     (uuid 00000000-0000-0000-0000-00005fea847c)
     (property "Reference" "U1" (id 0) (at 88.9 162.1282 0))
     (property "Value" "PT8211" (id 1) (at 88.9 164.4396 0))
-    (property "Footprint" "" (id 2) (at 88.9 175.26 0)
+    (property "Footprint" "Package_SO:SOP-8_3.9x4.9mm_P1.27mm" (id 2) (at 88.9 175.26 0)
       (effects (font (size 1.27 1.27) italic) hide)
     )
     (property "Datasheet" "" (id 3) (at 88.9 175.26 0)
