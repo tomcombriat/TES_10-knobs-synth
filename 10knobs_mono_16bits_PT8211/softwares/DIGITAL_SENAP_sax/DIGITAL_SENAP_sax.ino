@@ -81,7 +81,12 @@ bool osc_is_on[POLYPHONY] = { false };
 int breath_at_note_off[POLYPHONY] = { 0 }, breath_next = 0;
 unsigned int chord_attack = 1, chord_release = 1, cutoff = 0, prev_cutoff = 0, midi_cutoff = 0;
 uint32_t deviation_rm;
-byte breath_on_vol_LUT[256];
+byte breath_on_vol_LUT[256] = {};
+
+#define COMP_BITS 7
+#define COMP_LUT_LEN ((1<<16) * POLYPHONY*(1<<7) >> (16+7-COMP_BITS)) - (1<<COMP_BITS)
+#define COMP_TAME 1  // 0 is theoritical equal amp if over limit. higher values allow a positive slope (ie amplitudes keeps increasing but less than with no compression)
+byte compressor_LUT[COMP_LUT_LEN] = {};
 
 
 
@@ -128,17 +133,7 @@ void set_freq(byte i, bool reset_phase = false) {
 }
 
 inline void compute_fm_param(byte i, bool reset_phase) {
-  /*  mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio);
-
-    aMod[i].setFreq_Q16n16(mod_freq[i]);*/
-
   mod_freq[i] = ((carrier_freq[i] >> 8) * mod_to_carrier_ratio) >> 8;
-  /*  Serial.print(Q16n16_to_float(carrier_freq[i]));
-    Serial.print(" ");
-    Serial.print(Q24n8_to_float(mod_freq[i]));
-    Serial.print(" ");
-    Serial.println(Q16n16_to_float(mod_freq[i]));*/
-  // put the aCarrier set freq here ? With noInterrupts around?
 
   aCarrier[i].setFreq_Q16n16(carrier_freq[i]);
   aMod[i].setFreq_Q24n8(mod_freq[i]);
@@ -191,6 +186,7 @@ int three_values_knob(int val, int i) {
 
 
 void setup() {
+  Serial.begin(115200);
   pinMode(LED, OUTPUT);
   mySPI.begin();
   delay(100);
@@ -210,8 +206,41 @@ void setup() {
 
   for (int i = 0; i < 256; i++) {
     if (i != 0) breath_on_vol_LUT[i] = log((float)i) / log(255.) * 255;
-    else breath_on_vol_LUT[i] = 0;
+    else breath_on_vol_LUT[i] = 0;    
   }
+  for (int i= 0;i<COMP_LUT_LEN;i++) 
+  {
+    compressor_LUT[i] = (unsigned long) (255 << COMP_BITS)/((i>>COMP_TAME)+(1<<COMP_BITS));
+    /*Serial.print(compressor_LUT[i]);
+    Serial.print(" ");
+    Serial.println((unsigned long)  (255 << COMP_BITS)/((i>>COMP_TAME)+(1<<COMP_BITS)));*/
+  }
+
+// NON, en fait, LUT[POLYPHONY*127]
+// Comme 127 eq. 7 bits:
+// LUT[i] = (255<<7)/i
+//        frac^   ^profondeur minimale d'action (commence à agir à 127 eq 7bits)
+// next: breath_next = breath_next*compressor_LUT[sum_env]>>8
+
+/*
+On peut encore gagner 127 valeurs:
+LUT[i] <--- LUT[i+127]
+donc LUT[i] = (255<<7)/(i+127)
+next: breath_next = (breath_next * compressor_LUT[((sum_env*breath_next)>>16) - 127]) >> 8 
+
+Pour une LUT plus grande (longueur M bits *potentielle*) qui agit sur 8bits
+LUT[i] = (255<<(M))/i) pour i in [1<<M , breath_max*env_max>>(sizeB + sizeE-M)] sizeB = 16, sizeE = 7 (bits)   Note: ici breath_max = sizeB
+ensuite breath_next = breath_next * compressor_LUT[((sum_env*breath_next)>> (sizeB+sizeE-M))] logique !
+ou, LUT[i] = (255<<M)/(i+1<<M)
+et breath_next =() breath_next * compressor_LUT[((sum_env*breath_next)>> (sizeB+sizeE-M)) -(1<<M)]) >> 8
+
+Ici, 7 doit suffire.
+
+Pour un clavier polyphonique, il faut faire des sommes ie.
+LUT[i] = (255<<(M))/i) pour i in [1<<M , vol_max*env_max>>(sizeB + sizeE-M)] sizeB = 16, sizeE = 7 (bits)   Note: ici breath_max = sizeB
+ensuite vol[i] = vol[i] * compressor_LUT[(sum(env[i]*vol[i])>> (sizeB+sizeE-M))]
+
+*/
 
   for (byte i = 0; i < POLYPHONY; i++) {
     envelope[i].setADLevels(128, 128);
@@ -276,10 +305,8 @@ void audioOutput(const AudioOutput f)  // f is a structure containing both chann
 
 
 
-
 void updateControl() {
   while (MIDI.read())
-    ;
 
   if ((volume) == 0) {
     for (byte i = 0; i < POLYPHONY; i++) {
@@ -335,17 +362,11 @@ void updateControl() {
 
   //for (byte i = 0; i < POLYPHONY; i++) deviation_sm[i] = deviation_smooth[i].next(deviation[i]);/
   for (byte i = 0; i < POLYPHONY; i++) deviation_sm[i] = deviation[i];
-  /*
-    Serial.print(volume);
-    Serial.print(" ");
-    unsigned int tamp = volume * (287-breath_sens);
-    tamp = tamp >> 5;
-    if (tamp > 16384) tamp = 16384;
-    Serial.println(tamp);*/
 }
 
 AudioOutput_t updateAudio() {
   long sample = 0;
+  unsigned int amplitude = 0;
   cutoff = cutoff_smooth.next(((breath_on_cutoff * volume) >> 6) + (midi_cutoff << 9));  // >>8
   if (cutoff > 65535) cutoff = 65535;
   if (cutoff != prev_cutoff || resonance != prev_resonance) {
@@ -363,22 +384,29 @@ AudioOutput_t updateAudio() {
   deviation_rm = rm_smooth.next(((breath_on_rm * volume) >> 6) + deviation_rm_pot << 2);
   //if (deviation_rm > 524288) deviation_rm = 524288;
 
-  /*
-    if ((volume >> 7) == 0) //reduce
-    {
-    for (byte i = 0; i < POLYPHONY; i++)
-    {
-      envelope[i].noteOff();
-      osc_is_on[i] = false; // so that chord do not fade out during next note afer a short pause
-      oscil_state[i] = 0;   // everybody reset
-      volume = 0;
-    }
-    }
-  */
 
+
+// COMPRESSOR AMPLITUDE CALCULATION AND APPLICATION
+
+int env_next[POLYPHONY];
   for (byte i = 0; i < POLYPHONY; i++) {
     envelope[i].update();
-    int env_next = envelope[i].next();  // for enveloppe to roll even if it is not playing
+    env_next[i]=envelope[i].next();
+    amplitude += env_next[i];
+  amplitude *= breath_next;
+  amplitude = amplitude >> (16+7-COMP_BITS); // hopefully optimized away
+  if (amplitude > (1<<COMP_BITS))
+  { 
+    //Serial.print(breath_next);
+    breath_next = (breath_next*compressor_LUT[amplitude-(1<<COMP_BITS)]) >> 8;/*
+Serial.print(" ");
+Serial.println(breath_next);*/
+  }
+  }
+
+  for (byte i = 0; i < POLYPHONY; i++) {
+    //envelope[i].update();
+    //int env_next = envelope[i].next();  // for enveloppe to roll even if it is not playing
     // if (!envelope[i].playing() && osc_is_on[i]) osc_is_on[i] = false;
     if (envelope[i].playing() && osc_is_on[i]) {
       long partial_sample = 0;
@@ -386,13 +414,12 @@ AudioOutput_t updateAudio() {
       Q15n16 modulation = deviation_sm[i] * aMod[i].phMod(modulation_rm) >> 8;
       partial_sample = aCarrier[i].phMod(modulation);  // 8bits
 
-
 #ifdef RINGING_CHORDS
       if (breath_at_note_off[i] != 0 && breath_at_note_off[i] < breath_next) partial_sample *= breath_at_note_off[i];
 
       else partial_sample *= breath_next;
 #endif
-      sample += (partial_sample * env_next);  // 15bits
+      sample += (partial_sample * env_next[i]);  // 15bits
     }
   }
 #ifndef RINGING_CHORDS
@@ -403,5 +430,9 @@ AudioOutput_t updateAudio() {
 #endif
   sample = lpf.next(sample >> 15);  // that's 16bits, overflowing with chords?
 
-  return MonoOutput::fromNBit(16, sample).clip();
+
+
+
+
+  return MonoOutput::fromNBit(18, sample).clip();
 }
