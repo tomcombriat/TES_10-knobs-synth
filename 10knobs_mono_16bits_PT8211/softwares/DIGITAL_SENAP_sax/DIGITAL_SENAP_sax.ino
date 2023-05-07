@@ -186,7 +186,7 @@ int three_values_knob(int val, int i) {
 
 
 void setup() {
-  Serial.begin(115200);
+  //Serial.begin(115200);
   pinMode(LED, OUTPUT);
   mySPI.begin();
   delay(100);
@@ -210,7 +210,7 @@ void setup() {
   }
   for (int i= 0;i<COMP_LUT_LEN;i++) 
   {
-    compressor_LUT[i] = (unsigned long) (255 << COMP_BITS)/((i>>COMP_TAME)+(1<<COMP_BITS));
+    compressor_LUT[i] = (unsigned long) (255 << COMP_BITS)/((i>>COMP_TAME)+(1<<COMP_BITS));    // farire le calcul en flottant pour le tame
     /*Serial.print(compressor_LUT[i]);
     Serial.print(" ");
     Serial.println((unsigned long)  (255 << COMP_BITS)/((i>>COMP_TAME)+(1<<COMP_BITS)));*/
@@ -305,6 +305,8 @@ void audioOutput(const AudioOutput f)  // f is a structure containing both chann
 
 
 
+
+
 void updateControl() {
   while (MIDI.read())
 
@@ -316,6 +318,7 @@ void updateControl() {
       volume = 0;
     }
   }
+
 
 
   toggle++;
@@ -428,11 +431,9 @@ Serial.println(breath_next);*/
 #ifdef DITHERING
   sample += rand(-16384, 16384);  //
 #endif
-  sample = lpf.next(sample >> 15);  // that's 16bits, overflowing with chords?
+  sample = lpf.next(sample >> 15);  // that's 16bits, overflowing with chords? (actually 17 with chords)
 
 
 
-
-
-  return MonoOutput::fromNBit(18, sample).clip();
+  return MonoOutput::fromNBit(18, sample).clip();  //1bit of headroom
 }
